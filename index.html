@@ -42,6 +42,37 @@
         .row-container:hover .nav-arrow {
             opacity: 1;
         }
+
+        /* Media Queries para telas pequenas (ex: smartphones em modo retrato) */
+        @media (max-width: 480px) {
+            /* Ajusta o tamanho da fonte do Hero para caber melhor */
+            #hero-title {
+                font-size: 1.875rem; /* Equivalente a text-3xl do Tailwind */
+                line-height: 2.25rem;
+            }
+
+            /* Reduz o tamanho dos botões do Hero */
+            .hero-buttons button {
+                padding: 0.5rem 1rem; /* Menor que o padrão */
+                font-size: 0.875rem;
+            }
+
+            /* Reduz o tamanho dos pôsteres nos carrosséis */
+            .poster-item {
+                width: 120px; /* Largura fixa menor para telas estreitas */
+            }
+
+            /* Ajusta o título das seções de carrossel */
+            #carousels h2 {
+                font-size: 1.125rem; /* Equivalente a text-lg */
+            }
+
+            /* Faz o modal ocupar quase a tela inteira para melhor leitura */
+            #movie-modal .bg-gray-800 {
+                max-width: 95%;
+                max-height: 95vh;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white font-sans">
@@ -75,7 +106,7 @@
                 <p id="hero-overview" class="text-lg mb-6 drop-shadow-lg hidden md:block">
                     Aguardando dados da API.
                 </p>
-                <div class="flex space-x-4">
+                <div class="flex space-x-4 hero-buttons">
                     <button class="flex items-center px-6 py-2 bg-white text-black font-bold rounded hover:bg-gray-300 transition duration-200">
                         <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 3l15 9-15 9V3z"></path></svg>
                         Assistir

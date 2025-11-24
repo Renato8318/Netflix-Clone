@@ -1,0 +1,29 @@
+/* style.css */
+
+/* Garantir que o body preencha a altura da tela */
+body {
+    min-height: 100vh;
+}
+
+/* Sombra de texto para o Hero Banner para melhor legibilidade */
+.text-shadow {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Customização para o Carrossel (fileiras) */
+.poster-item {
+    transition: transform 0.3s ease;
+}
+
+.poster-item:hover {
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+/* Corrigir o scroll horizontal para os carrosséis */
+.poster-carousel {
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap; /* Impede que os itens quebrem linha */
+    padding-bottom: 10px; /* Espaço para a sombra/mouse */
+}

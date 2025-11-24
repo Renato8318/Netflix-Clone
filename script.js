@@ -2,13 +2,17 @@
 //                  CONFIGURAÇÃO DA API TMDb
 // =========================================================
 
-// CHAVE DE API FORNECIDA PELO USUÁRIO
+// CHAVE DE API FORNECIDA PELO USUÁRIO (Mantenha a sua chave aqui)
 const API_KEY = '385852cfc5b213ccc9c5940b05c6b9db'; 
 // =========================================================
 
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/'; 
 const LANGUAGE = 'pt-BR';
+
+// Variável global para guardar o item em destaque (Hero)
+let featuredItem = null; 
+let currentMediaType = 'all';
 
 // Endpoints da API
 const ENDPOINTS = {
@@ -18,19 +22,12 @@ const ENDPOINTS = {
     hero: `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${LANGUAGE}`
 };
 
-// Variável para armazenar o tipo de mídia ativo globalmente ('all' é o padrão, 'favorites' é o novo filtro)
-let currentMediaType = 'all';
-
 // =========================================================
 //                  1. FUNÇÕES DE LOCALSTORAGE (MINHA LISTA)
 // =========================================================
 
 const FAVORITES_KEY = 'netflixCloneFavorites';
 
-/**
- * Obtém a lista de favoritos do LocalStorage.
- * O formato é: { id: mediaType, id2: mediaType2, ... }
- */
 function getFavorites() {
     const favorites = localStorage.getItem(FAVORITES_KEY);
     try {
@@ -41,28 +38,20 @@ function getFavorites() {
     }
 }
 
-/**
- * Verifica se um item está nos favoritos.
- */
 function isFavorite(id) {
     const favorites = getFavorites();
     return favorites.hasOwnProperty(String(id));
 }
 
-/**
- * Adiciona ou remove um item dos favoritos.
- */
 function toggleFavorite(id, mediaType) {
     const favorites = getFavorites();
     const stringId = String(id);
 
     if (favorites.hasOwnProperty(stringId)) {
-        // Remove
         delete favorites[stringId];
         localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
         return false;
     } else {
-        // Adiciona
         favorites[stringId] = mediaType;
         localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
         return true;
@@ -146,7 +135,6 @@ function updateFavoriteButton(itemId, mediaType) {
     const isFav = isFavorite(itemId);
     const favButton = document.getElementById('modal-favorite-btn');
     
-    // Define o texto e o ícone
     if (isFav) {
         favButton.innerHTML = `
             <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
@@ -163,14 +151,12 @@ function updateFavoriteButton(itemId, mediaType) {
         favButton.classList.add('bg-gray-600', 'bg-opacity-70');
     }
 
-    // Adiciona o listener de toggle
     favButton.onclick = () => {
         const wasAdded = toggleFavorite(itemId, mediaType);
         updateFavoriteButton(itemId, mediaType); 
         
         console.log(wasAdded ? 'Adicionado à Minha Lista!' : 'Removido da Minha Lista!');
         
-        // Se a lista de favoritos estiver ativa e algo for removido, recarrega o carrossel
         if (currentMediaType === 'favorites' && !wasAdded) {
             loadAllCarousels();
         }
@@ -241,9 +227,6 @@ async function openModal(itemId, mediaType) {
 //                  5. LÓGICA DE CARREGAMENTO DE CARROSSÉIS
 // =========================================================
 
-/**
- * Função específica para carregar APENAS os favoritos.
- */
 async function loadFavoritesCarousel(carouselId, imageSize = 'w500') {
     const carouselElement = document.getElementById(carouselId);
     carouselElement.innerHTML = ''; 
@@ -256,7 +239,6 @@ async function loadFavoritesCarousel(carouselId, imageSize = 'w500') {
         return;
     }
 
-    // Carregar detalhes de cada favorito
     const requests = favoriteIds.map(id => {
         const mediaType = favoritesList[id];
         const type = mediaType === 'movie' || mediaType === 'tv' ? mediaType : 'movie'; 
@@ -266,7 +248,6 @@ async function loadFavoritesCarousel(carouselId, imageSize = 'w500') {
 
     const items = await Promise.all(requests);
     
-    // Renderiza apenas os itens que retornaram com sucesso e têm poster
     items.filter(item => item && item.poster_path).forEach(item => {
         const posterPath = item.poster_path;
         const posterUrl = `${IMAGE_BASE_URL}${imageSize}${posterPath}`;
@@ -274,7 +255,7 @@ async function loadFavoritesCarousel(carouselId, imageSize = 'w500') {
         const mediaType = item.media_type || (item.title ? 'movie' : 'tv'); 
 
         const posterDiv = document.createElement('div');
-        posterDiv.className = 'w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item';
+        posterDiv.className = 'flex-shrink-0 cursor-pointer poster-item'; // A largura será controlada pelo CSS
         posterDiv.innerHTML = `<img src="${posterUrl}" alt="${title}" class="w-full h-auto object-cover rounded hover:shadow-xl" loading="lazy">`;
 
         posterDiv.addEventListener('click', () => {
@@ -290,9 +271,6 @@ async function loadFavoritesCarousel(carouselId, imageSize = 'w500') {
 }
 
 
-/**
- * Busca dados da API e renderiza os cartazes no carrossel, aplicando filtro se necessário.
- */
 async function fetchAndLoadCarousel(fetchUrl, carouselId, imageSize = 'w500', requiredType = null) {
     if (requiredType === 'favorites') {
         loadFavoritesCarousel(carouselId, imageSize);
@@ -313,7 +291,6 @@ async function fetchAndLoadCarousel(fetchUrl, carouselId, imageSize = 'w500', re
             const posterPath = item.poster_path;
             const mediaType = item.media_type || (item.title ? 'movie' : 'tv'); 
             
-            // Lógica de FILTRAGEM (Filmes/Séries/Todos)
             if (requiredType && requiredType !== 'all' && mediaType !== requiredType) {
                 return; 
             }
@@ -323,7 +300,7 @@ async function fetchAndLoadCarousel(fetchUrl, carouselId, imageSize = 'w500', re
                 const title = item.title || item.name; 
 
                 const posterDiv = document.createElement('div');
-                posterDiv.className = 'w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item';
+                posterDiv.className = 'flex-shrink-0 cursor-pointer poster-item'; // A largura será controlada pelo CSS
                 posterDiv.innerHTML = `<img src="${posterUrl}" alt="${title}" class="w-full h-auto object-cover rounded hover:shadow-xl" loading="lazy">`;
 
                 posterDiv.addEventListener('click', () => {
@@ -345,56 +322,55 @@ async function fetchAndLoadCarousel(fetchUrl, carouselId, imageSize = 'w500', re
 }
 
 
-/**
- * Função principal para carregar todos os carrosséis com base no tipo de mídia atual.
- * **CORREÇÃO APLICADA AQUI:** Esconde os carrosséis duplicados no modo 'favorites'.
- */
 function loadAllCarousels() {
-    const carousels = [
-        { id: 'carousel-tendencias', h2Selector: '#carousels > div:nth-child(1) h2', originalTitle: 'Tendências da Semana', endpoint: ENDPOINTS.trending },
-        { id: 'carousel-populares', h2Selector: '#carousels > div:nth-child(2) h2', originalTitle: 'Filmes Populares', endpoint: ENDPOINTS.popularMovies },
-        { id: 'carousel-series', h2Selector: '#carousels > div:nth-child(3) h2', originalTitle: 'Séries Mais Votadas', endpoint: ENDPOINTS.topRatedTv }
-    ];
-
-    const carouselsContainer = document.getElementById('carousels');
-    const allRowContainers = carouselsContainer.querySelectorAll('.row-container');
-
+    // Seleciona os contêineres de cada fileira de carrossel
+    const tendenciasRow = document.querySelector('#carousel-tendencias').closest('.row-container');
+    const popularesRow = document.querySelector('#carousel-populares').closest('.row-container');
+    const seriesRow = document.querySelector('#carousel-series').closest('.row-container');
+    const h2Tendencias = tendenciasRow.querySelector('h2');
 
     if (currentMediaType === 'favorites') {
         // --- MODO MINHA LISTA (APENAS UM CARROSSEL) ---
-        
-        // 1. Esconde os containers dos carrosséis 2 e 3
-        allRowContainers[1].style.display = 'none'; // Populares
-        allRowContainers[2].style.display = 'none'; // Séries
-        
-        // 2. Renomeia o título do primeiro carrossel
-        document.querySelector(carousels[0].h2Selector).textContent = 'Minha Lista';
-        
-        // 3. Carrega o conteúdo de favoritos APENAS no primeiro carrossel
-        allRowContainers[0].style.display = 'block'; // Garante que o primeiro está visível
-        fetchAndLoadCarousel(null, carousels[0].id, 'w342', 'favorites');
+        popularesRow.style.display = 'none';
+        seriesRow.style.display = 'none';
+        tendenciasRow.style.display = 'block';
+        h2Tendencias.textContent = 'Minha Lista';
+        loadFavoritesCarousel('carousel-tendencias', 'w342');
 
     } else {
         // --- MODO NORMAL (TODOS, FILMES, SÉRIES) ---
-        
-        // 1. Garante que todos os carrosséis estão visíveis
-        allRowContainers.forEach(container => container.style.display = 'block');
+        // Reseta os títulos e a visibilidade
+        h2Tendencias.textContent = 'Tendências da Semana';
+        tendenciasRow.style.display = 'block';
+        popularesRow.style.display = 'block';
+        seriesRow.style.display = 'block';
 
-        // 2. Restaura os títulos originais
-        carousels.forEach(c => {
-            document.querySelector(c.h2Selector).textContent = c.originalTitle;
-        });
+        // Carrega o carrossel de tendências, filtrando o conteúdo se necessário
+        fetchAndLoadCarousel(ENDPOINTS.trending, 'carousel-tendencias', 'w342', currentMediaType);
 
-        // 3. Carrega o conteúdo normal
-        fetchAndLoadCarousel(carousels[0].endpoint, carousels[0].id, 'w342', currentMediaType);
-        fetchAndLoadCarousel(carousels[1].endpoint, carousels[1].id, 'w342', currentMediaType);
-        fetchAndLoadCarousel(carousels[2].endpoint, carousels[2].id, 'w342', currentMediaType);
+        // Esconde/mostra a fileira de filmes populares
+        if (currentMediaType === 'tv') {
+            popularesRow.style.display = 'none';
+        } else {
+            popularesRow.style.display = 'block';
+            // O 'requiredType' aqui é 'movie' porque este carrossel é SÓ de filmes
+            fetchAndLoadCarousel(ENDPOINTS.popularMovies, 'carousel-populares', 'w342', 'movie');
+        }
+
+        // Esconde/mostra a fileira de séries
+        if (currentMediaType === 'movie') {
+            seriesRow.style.display = 'none';
+        } else {
+            seriesRow.style.display = 'block';
+            // O 'requiredType' aqui é 'tv' porque este carrossel é SÓ de séries
+            fetchAndLoadCarousel(ENDPOINTS.topRatedTv, 'carousel-series', 'w342', 'tv');
+        }
     }
 }
 
 
 // =========================================================
-//                  6. LÓGICA DE FILTRO E INICIALIZAÇÃO
+//                  6. LÓGICA DE FILTRO E BOTÕES DO HERO
 // =========================================================
 
 /**
@@ -412,7 +388,6 @@ function setupFilterNavigation() {
 
             currentMediaType = newType;
             
-            // 1. Atualiza o estilo visual dos botões
             filterButtons.forEach(btn => {
                 btn.classList.remove('font-bold', 'text-white');
                 btn.classList.add('text-gray-400');
@@ -420,10 +395,8 @@ function setupFilterNavigation() {
             button.classList.add('font-bold', 'text-white');
             button.classList.remove('text-gray-400');
             
-            // 2. Recarrega os carrosséis com o novo filtro
             loadAllCarousels();
             
-            // 3. Rola a página para o topo dos carrosséis
             const carouselsSection = document.getElementById('carousels');
             window.scrollTo({
                 top: carouselsSection.offsetTop - header.offsetHeight - 20, 
@@ -433,9 +406,35 @@ function setupFilterNavigation() {
     });
 }
 
+/**
+ * Adiciona os listeners de evento aos botões do Hero Banner.
+ */
+function setupHeroButtons() {
+    const assistButton = document.querySelector('#hero-banner + div .flex button:first-child');
+    const detailsButton = document.querySelector('#hero-banner + div .flex button:last-child');
+    
+    if (featuredItem) {
+        // Botão Assistir (apenas console log, pois não há player)
+        assistButton.addEventListener('click', () => {
+            console.log(`Assistindo: ${featuredItem.title || featuredItem.name}`);
+            alert(`Iniciando a reprodução de: ${featuredItem.title || featuredItem.name}`);
+        });
+
+        // Botão Mais Detalhes (chama o modal com o ID e tipo)
+        detailsButton.addEventListener('click', () => {
+            const mediaType = featuredItem.media_type || (featuredItem.title ? 'movie' : 'tv');
+            
+            // CHAMA A FUNÇÃO DE MODAL COM OS DADOS DO ITEM EM DESTAQUE
+            openModal(featuredItem.id, mediaType);
+        });
+    } else {
+         console.error("featuredItem não foi carregado corretamente. Botões do Hero desativados.");
+    }
+}
+
 
 /**
- * Preenche a seção de destaque (Hero)
+ * Preenche a seção de destaque (Hero) e armazena seus dados.
  */
 async function loadHeroBanner() {
     try {
@@ -444,6 +443,9 @@ async function loadHeroBanner() {
         const featured = data.results.find(item => item.backdrop_path) || data.results[0];
 
         if (featured && featured.backdrop_path) {
+            // Armazena o item em destaque na variável global
+            featuredItem = featured; 
+
             const bannerElement = document.getElementById('hero-banner');
             const titleElement = document.getElementById('hero-title');
             const overviewElement = document.getElementById('hero-overview');
@@ -453,6 +455,9 @@ async function loadHeroBanner() {
             bannerElement.style.backgroundImage = `url('${bannerUrl}')`;
             titleElement.textContent = featured.title || featured.name;
             overviewElement.textContent = (featured.overview || 'Sinopse indisponível.').substring(0, 200) + '...';
+
+            // Configura a interatividade dos botões após o carregamento
+            setupHeroButtons();
         }
     } catch (error) {
         console.error("[ERRO] Falha ao carregar Banner Hero:", error);
@@ -472,6 +477,5 @@ document.addEventListener('DOMContentLoaded', () => {
     
     setupFilterNavigation();
     
-    // Carrega o conteúdo inicial (Todos)
     loadAllCarousels();
 });

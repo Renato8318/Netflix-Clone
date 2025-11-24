@@ -50,11 +50,12 @@
         <div class="flex justify-between items-center max-w-7xl mx-auto px-4">
             <div class="flex items-center space-x-8">
                 <img src="https://logodownload.org/wp-content/uploads/2014/10/netflix-logo-1-1.png" alt="Netflix Logo" class="h-7 sm:h-10">
+                
                 <nav class="hidden md:flex space-x-6 text-sm">
-                    <a href="#" class="text-white hover:text-gray-300 font-bold">Início</a>
-                    <a href="#" class="text-gray-400 hover:text-gray-300">Séries</a>
-                    <a href="#" class="text-gray-400 hover:text-gray-300">Filmes</a>
-                    <a href="#" class="text-gray-400 hover:text-gray-300">Minha Lista</a>
+                    <a href="#" id="nav-all" data-type="all" class="nav-filter text-white hover:text-gray-300 font-bold">Todos</a>
+                    <a href="#" id="nav-series" data-type="tv" class="nav-filter text-gray-400 hover:text-gray-300">Séries</a>
+                    <a href="#" id="nav-movies" data-type="movie" class="nav-filter text-gray-400 hover:text-gray-300">Filmes</a>
+                    <a href="#" id="nav-favorites" data-type="favorites" class="nav-filter text-gray-400 hover:text-gray-300">Minha Lista</a>
                 </nav>
             </div>
             <div class="flex items-center space-x-4">
@@ -81,7 +82,7 @@
                     </button>
                     <button class="flex items-center px-6 py-2 bg-gray-600 bg-opacity-70 text-white font-bold rounded hover:bg-gray-500 transition duration-200">
                         <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Minha Lista
+                        Mais Detalhes
                     </button>
                 </div>
             </div>
@@ -144,7 +145,13 @@
                     </div>
                 </div>
 
-                <div class="p-6 flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-6">
+                <div class="p-6 pt-2">
+                    <button id="modal-favorite-btn" class="flex items-center justify-center w-full px-6 py-3 bg-gray-600 bg-opacity-70 text-white font-bold rounded hover:bg-gray-500 transition duration-200">
+                        Adicionar à Lista
+                    </button>
+                </div>
+
+                <div class="p-6 pt-2 flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-6 border-t border-gray-700">
                     <div class="md:w-2/3">
                         <div class="flex items-center space-x-4 mb-4 text-lg">
                             <span id="modal-release-date" class="font-semibold text-green-400">Ano</span>

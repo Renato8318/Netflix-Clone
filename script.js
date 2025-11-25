@@ -2,7 +2,7 @@
 //                  CONFIGURAÇÃO DA API TMDb
 // =========================================================
 
-// CHAVE DE API FORNECIDA PELO USUÁRIO (Mantenha a sua chave aqui)
+// CHAVE DE API: SUBSTITUA PELA SUA CHAVE REAL!
 const API_KEY = '385852cfc5b213ccc9c5940b05c6b9db'; 
 // =========================================================
 
@@ -10,8 +10,10 @@ const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/'; 
 const LANGUAGE = 'pt-BR';
 
-// Variável global para guardar o item em destaque (Hero)
+// Variáveis Globais para o Carrossel Automático do Hero e Filtros
 let featuredItem = null; 
+let featuredItemsList = []; // <-- ESSA ESTAVA FALTANDO
+let currentFeaturedIndex = 0; // <-- ESSA ESTAVA FALTANDO
 let currentMediaType = 'all';
 
 // Endpoints da API
@@ -77,7 +79,7 @@ window.addEventListener('scroll', () => {
 
 
 // =========================================================
-//                  3. NAVEGAÇÃO DO CARROSSEL
+//                  3. NAVEGAÇÃO DO CARROSSEL DE FILEIRAS
 // =========================================================
 
 function setupCarouselNavigation(carouselId, leftArrowId, rightArrowId) {
@@ -112,7 +114,7 @@ closeModalBtn.addEventListener('click', () => {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
     if (currentMediaType === 'favorites') {
-        loadAllCarousels();
+        loadAllCarousels(); 
     }
 });
 
@@ -122,7 +124,7 @@ modal.addEventListener('click', (e) => {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         if (currentMediaType === 'favorites') {
-            loadAllCarousels();
+            loadAllCarousels(); 
         }
     }
 });
@@ -183,6 +185,10 @@ async function openModal(itemId, mediaType) {
         // 3. Esconder loader e mostrar conteúdo
         modalLoader.classList.add('hidden');
         modalContent.classList.remove('hidden');
+        
+        if (details.success === false) {
+             throw new Error(details.status_message || "Item não encontrado na API.");
+        }
 
         // 4. Preencher o conteúdo
         document.getElementById('modal-title').textContent = details.title || details.name;
@@ -216,9 +222,13 @@ async function openModal(itemId, mediaType) {
 
     } catch (error) {
         console.error("Erro ao carregar detalhes:", error);
+        
         modalLoader.classList.add('hidden');
         modalContent.classList.add('hidden');
-        alert("Erro ao carregar detalhes do conteúdo. Verifique o console para mais informações.");
+        
+        alert(`Erro ao carregar detalhes do conteúdo. Verifique o console. Erro: ${error.message}`);
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
     }
 }
 
@@ -227,6 +237,9 @@ async function openModal(itemId, mediaType) {
 //                  5. LÓGICA DE CARREGAMENTO DE CARROSSÉIS
 // =========================================================
 
+/**
+ * Carrega o carrossel usando apenas os itens salvos no LocalStorage (Minha Lista).
+ */
 async function loadFavoritesCarousel(carouselId, imageSize = 'w500') {
     const carouselElement = document.getElementById(carouselId);
     carouselElement.innerHTML = ''; 
@@ -255,7 +268,8 @@ async function loadFavoritesCarousel(carouselId, imageSize = 'w500') {
         const mediaType = item.media_type || (item.title ? 'movie' : 'tv'); 
 
         const posterDiv = document.createElement('div');
-        posterDiv.className = 'flex-shrink-0 cursor-pointer poster-item'; // A largura será controlada pelo CSS
+        // Adicionando as classes de largura que estavam faltando na versão anterior
+        posterDiv.className = 'w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item'; 
         posterDiv.innerHTML = `<img src="${posterUrl}" alt="${title}" class="w-full h-auto object-cover rounded hover:shadow-xl" loading="lazy">`;
 
         posterDiv.addEventListener('click', () => {
@@ -265,27 +279,34 @@ async function loadFavoritesCarousel(carouselId, imageSize = 'w500') {
         carouselElement.appendChild(posterDiv);
     });
 
-    if (carouselElement.children.length === 0) {
+    if (carouselElement.children.length === 0 && favoriteIds.length > 0) {
          carouselElement.innerHTML = '<p class="text-gray-500 p-4">Os itens favoritos não puderam ser carregados.</p>';
     }
 }
 
 
+/**
+ * Busca dados da API e carrega um carrossel.
+ */
 async function fetchAndLoadCarousel(fetchUrl, carouselId, imageSize = 'w500', requiredType = null) {
-    if (requiredType === 'favorites') {
+    if (requiredType === 'favorites') { 
         loadFavoritesCarousel(carouselId, imageSize);
         return;
     }
-
+    
     const carouselElement = document.getElementById(carouselId);
     if (!carouselElement) return;
 
-    carouselElement.innerHTML = ''; 
+    // Adiciona um loader visual
+    carouselElement.innerHTML = '<div class="animate-pulse w-full flex space-x-3"><div class="h-40 w-40 bg-gray-800 rounded"></div><div class="h-40 w-40 bg-gray-800 rounded hidden md:block"></div><div class="h-40 w-40 bg-gray-800 rounded hidden lg:block"></div></div>'; 
 
     try {
         const response = await fetch(fetchUrl);
         const data = await response.json();
         const itemsList = data.results; 
+        
+        // Limpa o loader
+        carouselElement.innerHTML = ''; 
 
         itemsList.forEach(item => {
             const posterPath = item.poster_path;
@@ -300,7 +321,8 @@ async function fetchAndLoadCarousel(fetchUrl, carouselId, imageSize = 'w500', re
                 const title = item.title || item.name; 
 
                 const posterDiv = document.createElement('div');
-                posterDiv.className = 'flex-shrink-0 cursor-pointer poster-item'; // A largura será controlada pelo CSS
+                // Adicionando as classes de largura
+                posterDiv.className = 'w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item'; 
                 posterDiv.innerHTML = `<img src="${posterUrl}" alt="${title}" class="w-full h-auto object-cover rounded hover:shadow-xl" loading="lazy">`;
 
                 posterDiv.addEventListener('click', () => {
@@ -317,64 +339,81 @@ async function fetchAndLoadCarousel(fetchUrl, carouselId, imageSize = 'w500', re
 
     } catch (error) {
         console.error(`[ERRO] Falha ao carregar carrossel ${carouselId}:`, error);
-        carouselElement.innerHTML = '<p class="text-red-500">Erro ao carregar conteúdo. Verifique sua chave API.</p>';
+        carouselElement.innerHTML = '<p class="text-red-500">Erro ao carregar conteúdo. Verifique sua chave API ou o console.</p>';
     }
 }
 
 
+/**
+ * Carrega todos os carrosséis baseando-se no filtro de mídia (all, movie, tv, favorites).
+ * ESSA FUNÇÃO RESOLVE O PROBLEMA DE EXIBIÇÃO.
+ */
 function loadAllCarousels() {
-    // Seleciona os contêineres de cada fileira de carrossel
-    const tendenciasRow = document.querySelector('#carousel-tendencias').closest('.row-container');
-    const popularesRow = document.querySelector('#carousel-populares').closest('.row-container');
-    const seriesRow = document.querySelector('#carousel-series').closest('.row-container');
-    const h2Tendencias = tendenciasRow.querySelector('h2');
+    // Mapeamento dos carrosséis com seus títulos originais
+    const carouselsData = [
+        { id: 'carousel-tendencias', h2Selector: '#carousels > div:nth-child(1) h2', originalTitle: 'Tendências da Semana', endpoint: ENDPOINTS.trending },
+        { id: 'carousel-populares', h2Selector: '#carousels > div:nth-child(2) h2', originalTitle: 'Filmes Populares', endpoint: ENDPOINTS.popularMovies },
+        { id: 'carousel-series', h2Selector: '#carousels > div:nth-child(3) h2', originalTitle: 'Séries Mais Votadas', endpoint: ENDPOINTS.topRatedTv }
+    ];
+
+    const carouselsContainer = document.getElementById('carousels');
+    // Seleciona todos os divs 'row-container' para controlar a visibilidade.
+    const allRowContainers = carouselsContainer.querySelectorAll('.row-container');
+
 
     if (currentMediaType === 'favorites') {
-        // --- MODO MINHA LISTA (APENAS UM CARROSSEL) ---
-        popularesRow.style.display = 'none';
-        seriesRow.style.display = 'none';
-        tendenciasRow.style.display = 'block';
-        h2Tendencias.textContent = 'Minha Lista';
-        loadFavoritesCarousel('carousel-tendencias', 'w342');
+        // --- MODO MINHA LISTA ---
+        
+        // 1. Oculta os carrosséis secundários
+        allRowContainers[1].style.display = 'none'; 
+        allRowContainers[2].style.display = 'none'; 
+        
+        // 2. Renomeia o título do primeiro carrossel e GARANTE que ele está visível
+        document.querySelector(carouselsData[0].h2Selector).textContent = 'Minha Lista';
+        allRowContainers[0].style.display = 'block'; 
+        
+        // 3. Carrega SÓ a lista de favoritos no primeiro carrossel
+        fetchAndLoadCarousel(null, carouselsData[0].id, 'w342', 'favorites');
 
     } else {
-        // --- MODO NORMAL (TODOS, FILMES, SÉRIES) ---
-        // Reseta os títulos e a visibilidade
-        h2Tendencias.textContent = 'Tendências da Semana';
-        tendenciasRow.style.display = 'block';
-        popularesRow.style.display = 'block';
-        seriesRow.style.display = 'block';
+        // --- MODO NORMAL (all, movie, tv) ---
+        
+        // 1. Exibe todos os containers de fileira (resolve a ocultação)
+        allRowContainers.forEach(container => container.style.display = 'block');
 
-        // Carrega o carrossel de tendências, filtrando o conteúdo se necessário
-        fetchAndLoadCarousel(ENDPOINTS.trending, 'carousel-tendencias', 'w342', currentMediaType);
+        // 2. Restaura os títulos originais
+        carouselsData.forEach(c => {
+            document.querySelector(c.h2Selector).textContent = c.originalTitle;
+        });
 
-        // Esconde/mostra a fileira de filmes populares
-        if (currentMediaType === 'tv') {
-            popularesRow.style.display = 'none';
+        // 3. Carrega os carrosséis da API (Lógica de Filtragem Aprimorada)
+
+        // Tendências: carrega tudo, mas o requiredType aplica o filtro se for 'movie' ou 'tv'
+        fetchAndLoadCarousel(carouselsData[0].endpoint, carouselsData[0].id, 'w342', currentMediaType);
+        
+        // Filmes Populares: Só carrega se o filtro for ALL ou MOVIE
+        if (currentMediaType === 'all' || currentMediaType === 'movie') {
+             fetchAndLoadCarousel(carouselsData[1].endpoint, carouselsData[1].id, 'w342', 'movie');
         } else {
-            popularesRow.style.display = 'block';
-            // O 'requiredType' aqui é 'movie' porque este carrossel é SÓ de filmes
-            fetchAndLoadCarousel(ENDPOINTS.popularMovies, 'carousel-populares', 'w342', 'movie');
+             document.getElementById(carouselsData[1].id).innerHTML = '<p class="text-gray-500 p-4">Filmes não exibidos neste filtro.</p>';
         }
 
-        // Esconde/mostra a fileira de séries
-        if (currentMediaType === 'movie') {
-            seriesRow.style.display = 'none';
+        // Séries Mais Votadas: Só carrega se o filtro for ALL ou TV
+        if (currentMediaType === 'all' || currentMediaType === 'tv') {
+             fetchAndLoadCarousel(carouselsData[2].endpoint, carouselsData[2].id, 'w342', 'tv');
         } else {
-            seriesRow.style.display = 'block';
-            // O 'requiredType' aqui é 'tv' porque este carrossel é SÓ de séries
-            fetchAndLoadCarousel(ENDPOINTS.topRatedTv, 'carousel-series', 'w342', 'tv');
+             document.getElementById(carouselsData[2].id).innerHTML = '<p class="text-gray-500 p-4">Séries não exibidas neste filtro.</p>';
         }
     }
 }
 
 
 // =========================================================
-//                  6. LÓGICA DE FILTRO E BOTÕES DO HERO
+//                  6. LÓGICA DO CARROSSEL AUTOMÁTICO DO HERO
 // =========================================================
 
 /**
- * Configura o comportamento dos botões de filtro (Séries, Filmes, Todos, Minha Lista).
+ * Configura o comportamento dos botões de filtro.
  */
 function setupFilterNavigation() {
     const filterButtons = document.querySelectorAll('.nav-filter');
@@ -388,6 +427,7 @@ function setupFilterNavigation() {
 
             currentMediaType = newType;
             
+            // Remove o estilo ativo de todos e adiciona ao clicado
             filterButtons.forEach(btn => {
                 btn.classList.remove('font-bold', 'text-white');
                 btn.classList.add('text-gray-400');
@@ -397,6 +437,7 @@ function setupFilterNavigation() {
             
             loadAllCarousels();
             
+            // Scroll suave para os carrosséis
             const carouselsSection = document.getElementById('carousels');
             window.scrollTo({
                 top: carouselsSection.offsetTop - header.offsetHeight - 20, 
@@ -407,61 +448,102 @@ function setupFilterNavigation() {
 }
 
 /**
+ * Atualiza o conteúdo visual do Hero Banner com o item no índice fornecido.
+ */
+function updateHeroContent(item) {
+    if (!item || !item.backdrop_path) return;
+
+    featuredItem = item; 
+
+    const bannerElement = document.getElementById('hero-banner');
+    const titleElement = document.getElementById('hero-title');
+    const overviewElement = document.getElementById('hero-overview');
+    
+    const bannerUrl = `${IMAGE_BASE_URL}original${item.backdrop_path}`;
+    
+    // Animação de transição (garantindo que o banner exista)
+    if (bannerElement) {
+        bannerElement.style.opacity = 0;
+        setTimeout(() => {
+            bannerElement.style.backgroundImage = `url('${bannerUrl}')`;
+            titleElement.textContent = item.title || item.name;
+            overviewElement.textContent = (item.overview || 'Sinopse indisponível.').substring(0, 200) + '...';
+            bannerElement.style.opacity = 1;
+        }, 500); // 500ms para o fade-in
+    }
+
+    setupHeroButtons();
+}
+
+
+/**
+ * Inicia a rotação automática do Hero Banner a cada 8 segundos.
+ */
+function startHeroCarousel() {
+    if (featuredItemsList.length <= 1) return; 
+
+    setInterval(() => {
+        currentFeaturedIndex = (currentFeaturedIndex + 1) % featuredItemsList.length;
+        const nextItem = featuredItemsList[currentFeaturedIndex];
+        
+        updateHeroContent(nextItem);
+    }, 8000); // 8 segundos
+}
+
+/**
  * Adiciona os listeners de evento aos botões do Hero Banner.
  */
 function setupHeroButtons() {
-    const assistButton = document.querySelector('#hero-banner + div .flex button:first-child');
-    const detailsButton = document.querySelector('#hero-banner + div .flex button:last-child');
+    const assistButton = document.querySelector('.hero-buttons button:first-child');
+    const detailsButton = document.querySelector('.hero-buttons button:last-child');
     
-    if (featuredItem) {
-        // Botão Assistir (apenas console log, pois não há player)
+    if (!assistButton || !detailsButton) return;
+
+    // Remove listeners antigos para evitar duplicação
+    assistButton.onclick = null;
+    detailsButton.onclick = null;
+
+    if (featuredItem && featuredItem.id) {
+        const mediaType = featuredItem.media_type || (featuredItem.title ? 'movie' : 'tv');
+        
         assistButton.addEventListener('click', () => {
-            console.log(`Assistindo: ${featuredItem.title || featuredItem.name}`);
             alert(`Iniciando a reprodução de: ${featuredItem.title || featuredItem.name}`);
         });
 
-        // Botão Mais Detalhes (chama o modal com o ID e tipo)
         detailsButton.addEventListener('click', () => {
-            const mediaType = featuredItem.media_type || (featuredItem.title ? 'movie' : 'tv');
-            
-            // CHAMA A FUNÇÃO DE MODAL COM OS DADOS DO ITEM EM DESTAQUE
             openModal(featuredItem.id, mediaType);
         });
+        
+        assistButton.disabled = false;
+        detailsButton.disabled = false;
+
     } else {
-         console.error("featuredItem não foi carregado corretamente. Botões do Hero desativados.");
+         assistButton.disabled = true;
+         detailsButton.disabled = true;
     }
 }
 
 
 /**
- * Preenche a seção de destaque (Hero) e armazena seus dados.
+ * Busca os dados do Hero Banner, armazena a lista e inicia a rotação.
  */
 async function loadHeroBanner() {
     try {
         const response = await fetch(ENDPOINTS.hero);
         const data = await response.json();
-        const featured = data.results.find(item => item.backdrop_path) || data.results[0];
+        
+        // Filtra para garantir que só itens com backdrop (imagem de fundo) sejam usados
+        featuredItemsList = data.results.filter(item => item.backdrop_path); 
 
-        if (featured && featured.backdrop_path) {
-            // Armazena o item em destaque na variável global
-            featuredItem = featured; 
-
-            const bannerElement = document.getElementById('hero-banner');
-            const titleElement = document.getElementById('hero-title');
-            const overviewElement = document.getElementById('hero-overview');
-            
-            const bannerUrl = `${IMAGE_BASE_URL}original${featured.backdrop_path}`;
-            
-            bannerElement.style.backgroundImage = `url('${bannerUrl}')`;
-            titleElement.textContent = featured.title || featured.name;
-            overviewElement.textContent = (featured.overview || 'Sinopse indisponível.').substring(0, 200) + '...';
-
-            // Configura a interatividade dos botões após o carregamento
-            setupHeroButtons();
+        if (featuredItemsList.length > 0) {
+            updateHeroContent(featuredItemsList[0]);
+            startHeroCarousel();
         }
     } catch (error) {
         console.error("[ERRO] Falha ao carregar Banner Hero:", error);
     }
+    
+    setupHeroButtons();
 }
 
 
@@ -477,5 +559,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     setupFilterNavigation();
     
+    // Inicia o carregamento dos carrosséis de fileiras
     loadAllCarousels();
 });

@@ -642,6 +642,21 @@ const searchResultsGrid = document.getElementById('search-results-grid');
 const searchResultsTitle = document.getElementById('search-results-title');
 
 /**
+ * Cria uma versão "debounced" de uma função que atrasa sua execução.
+ * @param {Function} func A função a ser "debounced".
+ * @param {number} delay O atraso em milissegundos.
+ * @returns {Function} A nova função "debounced".
+ */
+function debounce(func, delay) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), delay);
+    };
+}
+
+/**
  * Exibe ou oculta a interface de busca.
  */
 function toggleSearchView(showSearch) {
@@ -706,6 +721,8 @@ async function performSearch(query) {
  * Configura os eventos do ícone e do input de busca.
  */
 function setupSearch() {
+    const debouncedSearch = debounce(performSearch, 400); // Atraso de 400ms
+
     searchIcon.addEventListener('click', () => {
         searchInput.classList.toggle('hidden');
         if (!searchInput.classList.contains('hidden')) {
@@ -717,10 +734,8 @@ function setupSearch() {
         }
     });
 
-    searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            performSearch(searchInput.value);
-        }
+    searchInput.addEventListener('input', (e) => {
+        debouncedSearch(e.target.value);
     });
 }
 

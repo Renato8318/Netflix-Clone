@@ -660,13 +660,28 @@ function debounce(func, delay) {
  * Exibe ou oculta a interface de busca.
  */
 function toggleSearchView(showSearch) {
+    const transitionDuration = 500; // Deve corresponder à duração no CSS (duration-500)
+
     if (showSearch) {
-        carouselsSection.classList.add('hidden');
+        // Fade out carrosséis
+        carouselsSection.classList.add('opacity-0');
+        setTimeout(() => {
+            carouselsSection.classList.add('hidden');
+        }, transitionDuration);
+
+        // Fade in resultados da busca
         searchResultsSection.classList.remove('hidden');
+        setTimeout(() => searchResultsSection.classList.remove('opacity-0'), 50); // Pequeno delay para garantir que a transição ocorra
     } else {
+        // Fade out resultados da busca
+        searchResultsSection.classList.add('opacity-0');
+        setTimeout(() => {
+            searchResultsSection.classList.add('hidden');
+            searchInput.value = ''; // Limpa o input ao sair da busca
+        }, transitionDuration);
+        // Fade in carrosséis
         carouselsSection.classList.remove('hidden');
-        searchResultsSection.classList.add('hidden');
-        searchInput.value = ''; // Limpa o input ao sair da busca
+        setTimeout(() => carouselsSection.classList.remove('opacity-0'), 50);
     }
 }
 

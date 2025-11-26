@@ -177,11 +177,18 @@ async function openModal(itemId, mediaType) {
     modalLoader.classList.remove('hidden');
     modalContent.classList.add('hidden');
 
+    // Reseta e esconde o botão do trailer
+    const trailerBtn = document.getElementById('modal-trailer-btn');
+    trailerBtn.classList.add('hidden');
+    trailerBtn.href = '#';
+
     try {
-        // 2. Requisição de detalhes
+        // 2. Requisições em paralelo para detalhes e vídeos
         const detailUrl = `${BASE_URL}/${mediaType}/${itemId}?api_key=${API_KEY}&language=${LANGUAGE}`;
-        const response = await fetch(detailUrl);
-        const details = await response.json();
+        const videosUrl = `${BASE_URL}/${mediaType}/${itemId}/videos?api_key=${API_KEY}&language=${LANGUAGE}`;
+        const [detailsResponse, videosResponse] = await Promise.all([fetch(detailUrl), fetch(videosUrl)]);
+        const details = await detailsResponse.json();
+        const videosData = await videosResponse.json();
 
         // 3. Esconder loader e mostrar conteúdo
         modalLoader.classList.add('hidden');
@@ -220,6 +227,17 @@ async function openModal(itemId, mediaType) {
         
         // 5. ATUALIZA O BOTÃO DE FAVORITAR
         updateFavoriteButton(itemId, mediaType); 
+
+        // 6. LÓGICA DO TRAILER
+        const officialTrailer = videosData.results.find(video => video.type === 'Trailer' && video.site === 'YouTube');
+        const anyTrailer = videosData.results.find(video => video.site === 'YouTube'); // Fallback para qualquer vídeo do YouTube
+
+        const trailer = officialTrailer || anyTrailer;
+
+        if (trailer && trailer.key) {
+            trailerBtn.href = `https://www.youtube.com/watch?v=${trailer.key}`;
+            trailerBtn.classList.remove('hidden');
+        }
 
     } catch (error) {
         console.error("Erro ao carregar detalhes:", error);

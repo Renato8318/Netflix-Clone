@@ -110,23 +110,63 @@ const closeModalBtn = document.getElementById('close-modal-btn');
 const modalLoader = document.getElementById('modal-loader');
 const modalContent = document.getElementById('modal-content');
 
-// Evento para fechar o modal
-closeModalBtn.addEventListener('click', () => {
+// Elementos do trailer no modal
+const trailerContainer = document.getElementById('modal-trailer-container');
+const trailerBtn = document.getElementById('modal-trailer-btn');
+const backBtn = document.getElementById('modal-back-btn');
+const modalDetailsHeader = document.getElementById('modal-details-header');
+const modalDetailsBody = document.getElementById('modal-details-body');
+let ytPlayer; // Variável global para o player do YouTube
+
+/**
+ * Função chamada pela API do YouTube quando o vídeo termina.
+ */
+function onPlayerStateChange(event) {
+    // YT.PlayerState.ENDED é o estado '0', que significa que o vídeo terminou.
+    if (event.data === YT.PlayerState.ENDED) {
+        hideTrailer();
+    }
+}
+
+/**
+ * Limpa o trailer e restaura a visualização de detalhes.
+ */
+function hideTrailer() {
+    // Destrói o player do YouTube para parar o vídeo e limpar recursos
+    if (ytPlayer) {
+        ytPlayer.destroy();
+        ytPlayer = null;
+    }
+    trailerContainer.innerHTML = '';
+    trailerContainer.classList.add('hidden');
+    
+    // Mostra os detalhes novamente
+    modalDetailsHeader.classList.remove('hidden');
+    modalDetailsBody.classList.remove('hidden');
+    backBtn.classList.add('hidden');
+    trailerBtn.classList.remove('hidden');
+}
+
+/**
+ * Fecha o modal completamente e garante que o trailer seja limpo.
+ */
+function closeModal() {
+    hideTrailer();
     modal.classList.add('hidden');
     modal.classList.remove('flex');
     if (currentMediaType === 'favorites') {
         loadAllCarousels(); 
     }
-});
+}
+
+// Evento para fechar o modal
+closeModalBtn.addEventListener('click', closeModal);
+backBtn.addEventListener('click', hideTrailer);
 
 // Fecha o modal ao clicar na área escura ao redor
 modal.addEventListener('click', (e) => {
     if (e.target.id === 'movie-modal') {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        if (currentMediaType === 'favorites') {
-            loadAllCarousels(); 
-        }
+        closeModal();
     }
 });
 
@@ -177,10 +217,10 @@ async function openModal(itemId, mediaType) {
     modalLoader.classList.remove('hidden');
     modalContent.classList.add('hidden');
 
-    // Reseta e esconde o botão do trailer
-    const trailerBtn = document.getElementById('modal-trailer-btn');
+    // Reseta o estado do modal para a visualização de detalhes
     trailerBtn.classList.add('hidden');
-    trailerBtn.href = '#';
+    trailerBtn.onclick = null;
+    hideTrailer();
 
     try {
         // 2. Requisições em paralelo para detalhes e vídeos
@@ -222,7 +262,7 @@ async function openModal(itemId, mediaType) {
         
         const backdropPath = details.backdrop_path || details.poster_path;
         if (backdropPath) {
-            document.getElementById('modal-backdrop').style.backgroundImage = `url('${IMAGE_BASE_URL}w780${backdropPath}')`;
+            document.getElementById('modal-backdrop').style.backgroundImage = `url('${IMAGE_BASE_URL}w1280${backdropPath}')`;
         }
         
         // 5. ATUALIZA O BOTÃO DE FAVORITAR
@@ -235,8 +275,33 @@ async function openModal(itemId, mediaType) {
         const trailer = officialTrailer || anyTrailer;
 
         if (trailer && trailer.key) {
-            trailerBtn.href = `https://www.youtube.com/watch?v=${trailer.key}`;
             trailerBtn.classList.remove('hidden');
+            trailerBtn.onclick = () => {
+                // Esconde os detalhes e mostra o container do trailer
+                modalDetailsHeader.classList.add('hidden');
+                modalDetailsBody.classList.add('hidden');
+                trailerContainer.classList.remove('hidden');
+                backBtn.classList.remove('hidden');
+                trailerBtn.classList.add('hidden');
+
+                // Cria e insere o iframe
+                trailerContainer.innerHTML = `<div id="youtube-player-placeholder"></div>`;
+                
+                // Usa a API do YouTube para criar o player
+                ytPlayer = new YT.Player('youtube-player-placeholder', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: trailer.key,
+                    playerVars: {
+                        'autoplay': 1, // Inicia o vídeo automaticamente
+                        'rel': 0,      // Não mostra vídeos relacionados ao final
+                        'controls': 1  // Mostra os controles do player
+                    },
+                    events: {
+                        'onStateChange': onPlayerStateChange
+                    }
+                });
+            };
         }
 
     } catch (error) {
@@ -246,8 +311,7 @@ async function openModal(itemId, mediaType) {
         modalContent.classList.add('hidden');
         
         alert(`Erro ao carregar detalhes do conteúdo. Verifique o console. Erro: ${error.message}`);
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+        closeModal();
     }
 }
 

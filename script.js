@@ -21,7 +21,8 @@ const ENDPOINTS = {
     trending: `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=${LANGUAGE}`,
     popularMovies: `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${LANGUAGE}`,
     topRatedTv: `${BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=${LANGUAGE}`,
-    hero: `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${LANGUAGE}`
+    hero: `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${LANGUAGE}`,
+    search: `${BASE_URL}/search/multi?api_key=${API_KEY}&language=${LANGUAGE}`
 };
 
 // =========================================================
@@ -548,7 +549,102 @@ async function loadHeroBanner() {
 
 
 // =========================================================
-//                  7. EXECUÇÃO INICIAL
+//                  7. LÓGICA DE BUSCA
+// =========================================================
+
+const searchIcon = document.getElementById('search-icon');
+const searchInput = document.getElementById('search-input');
+const carouselsSection = document.getElementById('carousels');
+const searchResultsSection = document.getElementById('search-results-section');
+const searchResultsGrid = document.getElementById('search-results-grid');
+const searchResultsTitle = document.getElementById('search-results-title');
+
+/**
+ * Exibe ou oculta a interface de busca.
+ */
+function toggleSearchView(showSearch) {
+    if (showSearch) {
+        carouselsSection.classList.add('hidden');
+        searchResultsSection.classList.remove('hidden');
+    } else {
+        carouselsSection.classList.remove('hidden');
+        searchResultsSection.classList.add('hidden');
+        searchInput.value = ''; // Limpa o input ao sair da busca
+    }
+}
+
+/**
+ * Busca filmes e séries na API e exibe os resultados.
+ */
+async function performSearch(query) {
+    if (!query || query.trim() === '') {
+        toggleSearchView(false); // Se a busca estiver vazia, volta para a home
+        return;
+    }
+
+    toggleSearchView(true);
+    searchResultsGrid.innerHTML = '<p class="text-gray-400 col-span-full">Buscando...</p>';
+    searchResultsTitle.textContent = `Resultados para: "${query}"`;
+
+    try {
+        const response = await fetch(`${ENDPOINTS.search}&query=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        const items = data.results.filter(item => item.poster_path && (item.media_type === 'movie' || item.media_type === 'tv'));
+
+        searchResultsGrid.innerHTML = '';
+
+        if (items.length === 0) {
+            searchResultsGrid.innerHTML = '<p class="text-gray-400 col-span-full">Nenhum resultado encontrado.</p>';
+            return;
+        }
+
+        items.forEach(item => {
+            const posterUrl = `${IMAGE_BASE_URL}w342${item.poster_path}`;
+            const title = item.title || item.name;
+            const mediaType = item.media_type;
+
+            const posterDiv = document.createElement('div');
+            posterDiv.className = 'cursor-pointer poster-item';
+            posterDiv.innerHTML = `<img src="${posterUrl}" alt="${title}" class="w-full h-auto object-cover rounded hover:shadow-xl" loading="lazy">`;
+
+            posterDiv.addEventListener('click', () => {
+                openModal(item.id, mediaType);
+            });
+
+            searchResultsGrid.appendChild(posterDiv);
+        });
+
+    } catch (error) {
+        console.error("Erro ao realizar busca:", error);
+        searchResultsGrid.innerHTML = '<p class="text-red-500 col-span-full">Erro ao buscar. Tente novamente mais tarde.</p>';
+    }
+}
+
+/**
+ * Configura os eventos do ícone e do input de busca.
+ */
+function setupSearch() {
+    searchIcon.addEventListener('click', () => {
+        searchInput.classList.toggle('hidden');
+        if (!searchInput.classList.contains('hidden')) {
+            searchInput.focus();
+        }
+        // Se o campo de busca estiver vazio ao clicar no ícone para fechar, volta à home
+        if (searchInput.classList.contains('hidden') && searchInput.value) {
+            toggleSearchView(false);
+        }
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            performSearch(searchInput.value);
+        }
+    });
+}
+
+
+// =========================================================
+//                  8. EXECUÇÃO INICIAL
 // =========================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -558,6 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCarouselNavigation('carousel-series', 'series-left-arrow', 'series-right-arrow');
     
     setupFilterNavigation();
+    setupSearch(); // <-- Adicionando a configuração da busca
     
     // Inicia o carregamento dos carrosséis de fileiras
     loadAllCarousels();

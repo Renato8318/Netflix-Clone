@@ -16,13 +16,35 @@ let featuredItemsList = []; // <-- ESSA ESTAVA FALTANDO
 let currentFeaturedIndex = 0; // <-- ESSA ESTAVA FALTANDO
 let currentMediaType = 'all';
 
+// IDs de Gêneros e Códigos de País (TMDb)
+const GENRES = {
+    ACTION: 28,
+    COMEDY: 35,
+    HORROR: 27,
+    ROMANCE: 10749,
+    ANIMATION: 16, // Usado para "Animes"
+};
+
+const COUNTRIES = {
+    JAPAN: 'JP',  // Usado para "Animes"
+    KOREA: 'KR'   // Usado para "Séries Coreanas"
+};
+
 // Endpoints da API
 const ENDPOINTS = {
     trending: `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=${LANGUAGE}`,
     popularMovies: `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${LANGUAGE}`,
     topRatedTv: `${BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=${LANGUAGE}`,
+    popularTv: `${BASE_URL}/tv/popular?api_key=${API_KEY}&language=${LANGUAGE}`, // Para Top 10 Séries
+    latestReleases: `${BASE_URL}/movie/now_playing?api_key=${API_KEY}&language=${LANGUAGE}`, // Para Lançamentos
     hero: `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=${LANGUAGE}`,
-    search: `${BASE_URL}/search/multi?api_key=${API_KEY}&language=${LANGUAGE}`
+    search: `${BASE_URL}/search/multi?api_key=${API_KEY}&language=${LANGUAGE}`,
+    actionMovies: `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${LANGUAGE}&with_genres=${GENRES.ACTION}`,
+    comedyMovies: `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${LANGUAGE}&with_genres=${GENRES.COMEDY}`,
+    romanceMovies: `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${LANGUAGE}&with_genres=${GENRES.ROMANCE}`,
+    horrorMovies: `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${LANGUAGE}&with_genres=${GENRES.HORROR}`,
+    anime: `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${LANGUAGE}&with_genres=${GENRES.ANIMATION}&with_origin_country=${COUNTRIES.JAPAN}`,
+    koreanTv: `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${LANGUAGE}&with_origin_country=${COUNTRIES.KOREA}`
 };
 
 // =========================================================
@@ -426,6 +448,63 @@ async function fetchAndLoadCarousel(fetchUrl, carouselId, imageSize = 'w500', re
     }
 }
 
+/**
+ * Busca dados da API e carrega um carrossel no estilo "Top 10".
+ */
+async function fetchAndLoadTop10Carousel(fetchUrl, carouselId, mediaType) {
+    const carouselElement = document.getElementById(carouselId);
+    if (!carouselElement) return;
+
+    // Adiciona um loader visual
+    carouselElement.innerHTML = '<div class="animate-pulse w-full flex space-x-3"><div class="h-40 w-40 bg-gray-800 rounded"></div><div class="h-40 w-40 bg-gray-800 rounded hidden md:block"></div><div class="h-40 w-40 bg-gray-800 rounded hidden lg:block"></div></div>';
+
+    try {
+        const response = await fetch(fetchUrl);
+        const data = await response.json();
+        const itemsList = data.results.slice(0, 10); // Pega apenas os 10 primeiros
+
+        carouselElement.innerHTML = '';
+
+        itemsList.forEach((item, index) => {
+            if (item.poster_path) {
+                const posterUrl = `${IMAGE_BASE_URL}w342${item.poster_path}`;
+                const title = item.title || item.name;
+
+                const posterDiv = document.createElement('div');
+                posterDiv.className = 'top-10-item flex-shrink-0 cursor-pointer';
+                posterDiv.innerHTML = `
+                    <div class="top-10-number">
+                        <span>${index + 1}</span>
+                    </div>
+                    <div class="top-10-poster">
+                        <img src="${posterUrl}" alt="${title}" class="w-full h-auto object-cover rounded" loading="lazy">
+                    </div>
+                `;
+
+                posterDiv.addEventListener('click', () => {
+                    openModal(item.id, mediaType);
+                });
+
+                carouselElement.appendChild(posterDiv);
+            }
+        });
+
+        if (carouselElement.children.length === 0) {
+            carouselElement.innerHTML = '<p class="text-gray-500 p-4">Nenhum conteúdo encontrado.</p>';
+        }
+
+    } catch (error) {
+        console.error(`[ERRO] Falha ao carregar carrossel Top 10 ${carouselId}:`, error);
+        carouselElement.innerHTML = '<p class="text-red-500">Erro ao carregar conteúdo.</p>';
+    }
+}
+
+
+
+
+
+
+
 
 /**
  * Carrega todos os carrosséis baseando-se no filtro de mídia (all, movie, tv, favorites).
@@ -434,9 +513,18 @@ async function fetchAndLoadCarousel(fetchUrl, carouselId, imageSize = 'w500', re
 function loadAllCarousels() {
     // Mapeamento dos carrosséis com seus títulos originais
     const carouselsData = [
-        { id: 'carousel-tendencias', h2Selector: '#carousels > div:nth-child(1) h2', originalTitle: 'Tendências da Semana', endpoint: ENDPOINTS.trending },
-        { id: 'carousel-populares', h2Selector: '#carousels > div:nth-child(2) h2', originalTitle: 'Filmes Populares', endpoint: ENDPOINTS.popularMovies },
-        { id: 'carousel-series', h2Selector: '#carousels > div:nth-child(3) h2', originalTitle: 'Séries Mais Votadas', endpoint: ENDPOINTS.topRatedTv }
+        { id: 'carousel-tendencias', h2Selector: '#carousels > div:nth-child(1) h2', originalTitle: 'Tendências da Semana', endpoint: ENDPOINTS.trending, loader: fetchAndLoadCarousel },
+        { id: 'carousel-top10-movies', h2Selector: '#carousels > div:nth-child(2) h2', originalTitle: 'Top 10 Filmes no Brasil', endpoint: ENDPOINTS.popularMovies, type: 'movie', loader: fetchAndLoadTop10Carousel },
+        { id: 'carousel-top10-series', h2Selector: '#carousels > div:nth-child(3) h2', originalTitle: 'Top 10 Séries no Brasil', endpoint: ENDPOINTS.popularTv, type: 'tv', loader: fetchAndLoadTop10Carousel },
+        { id: 'carousel-lancamentos', h2Selector: '#carousels > div:nth-child(4) h2', originalTitle: 'Últimos Lançamentos', endpoint: ENDPOINTS.latestReleases, type: 'movie', loader: fetchAndLoadCarousel },
+        { id: 'carousel-populares', h2Selector: '#carousels > div:nth-child(5) h2', originalTitle: 'Filmes Populares', endpoint: ENDPOINTS.popularMovies, loader: fetchAndLoadCarousel },
+        { id: 'carousel-series', h2Selector: '#carousels > div:nth-child(6) h2', originalTitle: 'Séries Mais Votadas', endpoint: ENDPOINTS.topRatedTv, loader: fetchAndLoadCarousel },
+        { id: 'carousel-action', h2Selector: '#carousels > div:nth-child(7) h2', originalTitle: 'Ação', endpoint: ENDPOINTS.actionMovies, type: 'movie', loader: fetchAndLoadCarousel },
+        { id: 'carousel-comedy', h2Selector: '#carousels > div:nth-child(8) h2', originalTitle: 'Comédia', endpoint: ENDPOINTS.comedyMovies, type: 'movie', loader: fetchAndLoadCarousel },
+        { id: 'carousel-horror', h2Selector: '#carousels > div:nth-child(9) h2', originalTitle: 'Terror', endpoint: ENDPOINTS.horrorMovies, type: 'movie', loader: fetchAndLoadCarousel },
+        { id: 'carousel-romance', h2Selector: '#carousels > div:nth-child(10) h2', originalTitle: 'Romance', endpoint: ENDPOINTS.romanceMovies, type: 'movie', loader: fetchAndLoadCarousel },
+        { id: 'carousel-anime', h2Selector: '#carousels > div:nth-child(11) h2', originalTitle: 'Animes', endpoint: ENDPOINTS.anime, type: 'tv', loader: fetchAndLoadCarousel },
+        { id: 'carousel-korean', h2Selector: '#carousels > div:nth-child(12) h2', originalTitle: 'Séries Coreanas', endpoint: ENDPOINTS.koreanTv, type: 'tv', loader: fetchAndLoadCarousel }
     ];
 
     const carouselsContainer = document.getElementById('carousels');
@@ -447,9 +535,9 @@ function loadAllCarousels() {
     if (currentMediaType === 'favorites') {
         // --- MODO MINHA LISTA ---
         
-        // 1. Oculta os carrosséis secundários
-        allRowContainers[1].style.display = 'none'; 
-        allRowContainers[2].style.display = 'none'; 
+        allRowContainers.forEach((container, index) => {
+            container.style.display = index === 0 ? 'block' : 'none';
+        });
         
         // 2. Renomeia o título do primeiro carrossel e GARANTE que ele está visível
         document.querySelector(carouselsData[0].h2Selector).textContent = 'Minha Lista';
@@ -461,32 +549,34 @@ function loadAllCarousels() {
     } else {
         // --- MODO NORMAL (all, movie, tv) ---
         
-        // 1. Exibe todos os containers de fileira (resolve a ocultação)
-        allRowContainers.forEach(container => container.style.display = 'block');
-
         // 2. Restaura os títulos originais
         carouselsData.forEach(c => {
-            document.querySelector(c.h2Selector).textContent = c.originalTitle;
+            const titleElement = document.querySelector(c.h2Selector);
+            if (titleElement) titleElement.textContent = c.originalTitle;
         });
 
-        // 3. Carrega os carrosséis da API (Lógica de Filtragem Aprimorada)
+        carouselsData.forEach((carousel, index) => {
+            const rowContainer = allRowContainers[index];
+            if (!rowContainer) return;
 
-        // Tendências: carrega tudo, mas o requiredType aplica o filtro se for 'movie' ou 'tv'
-        fetchAndLoadCarousel(carouselsData[0].endpoint, carouselsData[0].id, 'w342', currentMediaType);
-        
-        // Filmes Populares: Só carrega se o filtro for ALL ou MOVIE
-        if (currentMediaType === 'all' || currentMediaType === 'movie') {
-             fetchAndLoadCarousel(carouselsData[1].endpoint, carouselsData[1].id, 'w342', 'movie');
-        } else {
-             document.getElementById(carouselsData[1].id).innerHTML = '<p class="text-gray-500 p-4">Filmes não exibidos neste filtro.</p>';
-        }
+            let shouldDisplay = false;
+            if (currentMediaType === 'all') {
+                shouldDisplay = true;
+            } else if (carousel.type) { // Se o carrossel tem um tipo definido (movie, tv)
+                shouldDisplay = carousel.type === currentMediaType;
+            } else { // Carrosséis genéricos como "Tendências"
+                shouldDisplay = true;
+            }
 
-        // Séries Mais Votadas: Só carrega se o filtro for ALL ou TV
-        if (currentMediaType === 'all' || currentMediaType === 'tv') {
-             fetchAndLoadCarousel(carouselsData[2].endpoint, carouselsData[2].id, 'w342', 'tv');
-        } else {
-             document.getElementById(carouselsData[2].id).innerHTML = '<p class="text-gray-500 p-4">Séries não exibidas neste filtro.</p>';
-        }
+            rowContainer.style.display = shouldDisplay ? 'block' : 'none';
+
+            if (shouldDisplay) {
+                // Usa o loader apropriado (padrão ou top 10)
+                const imageSize = carousel.loader === fetchAndLoadTop10Carousel ? 'w342' : 'w500';
+                const typeToLoad = carousel.type || currentMediaType; // Para o carrossel de tendências
+                carousel.loader(carousel.endpoint, carousel.id, carousel.loader === fetchAndLoadTop10Carousel ? typeToLoad : imageSize, typeToLoad);
+            }
+        });
     }
 }
 
@@ -764,6 +854,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setupCarouselNavigation('carousel-tendencias', 'tendencias-left-arrow', 'tendencias-right-arrow');
     setupCarouselNavigation('carousel-populares', 'populares-left-arrow', 'populares-right-arrow');
     setupCarouselNavigation('carousel-series', 'series-left-arrow', 'series-right-arrow');
+    setupCarouselNavigation('carousel-action', 'action-left-arrow', 'action-right-arrow');
+    setupCarouselNavigation('carousel-comedy', 'comedy-left-arrow', 'comedy-right-arrow');
+    setupCarouselNavigation('carousel-anime', 'anime-left-arrow', 'anime-right-arrow');
+    setupCarouselNavigation('carousel-horror', 'horror-left-arrow', 'horror-right-arrow');
+    setupCarouselNavigation('carousel-lancamentos', 'lancamentos-left-arrow', 'lancamentos-right-arrow');
+    setupCarouselNavigation('carousel-romance', 'romance-left-arrow', 'romance-right-arrow');
+    setupCarouselNavigation('carousel-korean', 'korean-left-arrow', 'korean-right-arrow');
     
     setupFilterNavigation();
     setupSearch(); // <-- Adicionando a configuração da busca

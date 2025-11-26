@@ -74,6 +74,40 @@
                 max-height: 95vh;
             }
         }
+
+        /* Estilos para o Carrossel Top 10 */
+        .top-10-item {
+            display: flex;
+            align-items: flex-end;
+            margin-right: -30px; /* Sobrepõe os números nos pôsteres */
+            transition: transform 0.3s ease;
+        }
+        .top-10-item:hover {
+            transform: scale(1.1);
+            z-index: 20;
+        }
+        .top-10-number {
+            font-size: 8rem; /* Tamanho gigante para o número */
+            font-weight: bold;
+            line-height: 0.7;
+            color: #1a202c; /* bg-gray-900 */
+            -webkit-text-stroke: 4px #a0aec0; /* text-gray-400 */
+            text-stroke: 4px #a0aec0;
+            z-index: 1;
+        }
+        .top-10-poster {
+            width: 144px; /* w-36 */
+            margin-left: -1.5rem; /* Ajuste para o número ficar atrás */
+            z-index: 2;
+        }
+        .top-10-poster img {
+            border: 2px solid white;
+        }
+        /* Ajuste para telas menores */
+        @media (max-width: 768px) {
+            .top-10-number { font-size: 6rem; -webkit-text-stroke-width: 3px; text-stroke-width: 3px; }
+            .top-10-poster { width: 112px; } /* w-28 */
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white font-sans">
@@ -134,6 +168,42 @@
                 </div>
             </div>
 
+            <!-- Fileira Top 10 Filmes -->
+            <div class="row-container mb-8 pl-4 md:pl-16 relative">
+                <h2 class="text-xl md:text-2xl font-bold mb-3">Top 10 Filmes no Brasil</h2>
+                <div class="relative">
+                    <div id="carousel-top10-movies" class="carousel-row flex overflow-x-scroll space-x-8 p-2">
+                        <!-- Conteúdo Top 10 será carregado via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fileira Top 10 Séries -->
+            <div class="row-container mb-8 pl-4 md:pl-16 relative">
+                <h2 class="text-xl md:text-2xl font-bold mb-3">Top 10 Séries no Brasil</h2>
+                <div class="relative">
+                    <div id="carousel-top10-series" class="carousel-row flex overflow-x-scroll space-x-8 p-2">
+                        <!-- Conteúdo Top 10 será carregado via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fileira de Lançamentos -->
+            <div class="row-container mb-8 pl-4 md:pl-16 relative">
+                <h2 class="text-xl md:text-2xl font-bold mb-3">Últimos Lançamentos</h2>
+                <div class="relative">
+                    <div id="carousel-lancamentos" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
+                        <!-- Conteúdo será carregado via JS -->
+                    </div>
+                    <div id="lancamentos-left-arrow" class="nav-arrow left-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                    <div id="lancamentos-right-arrow" class="nav-arrow right-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-8 pl-4 md:pl-16 row-container relative">
                 <h2 class="text-xl md:text-2xl font-bold mb-3">Filmes Populares</h2>
                 <div id="carousel-populares" class="flex overflow-x-scroll space-x-3 p-2 carousel-row">
@@ -157,7 +227,107 @@
                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                 </div>
             </div>
+
+            <!-- ========================================================= -->
+            <!--                  NOVOS CARROSSÉIS DE GÊNERO                 -->
+            <!-- ========================================================= -->
+
+            <!-- Fileira de Ação -->
+            <div class="row-container mb-8 pl-4 md:pl-16 relative">
+                <h2 class="text-xl md:text-2xl font-bold mb-3">Ação</h2>
+                <div class="relative">
+                    <div id="carousel-action" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
+                        <!-- Conteúdo será carregado via JS -->
+                    </div>
+                    <div id="action-left-arrow" class="nav-arrow left-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                    <div id="action-right-arrow" class="nav-arrow right-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fileira de Comédia -->
+            <div class="row-container mb-8 pl-4 md:pl-16 relative">
+                <h2 class="text-xl md:text-2xl font-bold mb-3">Comédia</h2>
+                <div class="relative">
+                    <div id="carousel-comedy" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
+                        <!-- Conteúdo será carregado via JS -->
+                    </div>
+                    <div id="comedy-left-arrow" class="nav-arrow left-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                    <div id="comedy-right-arrow" class="nav-arrow right-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fileira de Terror -->
+            <div class="row-container mb-8 pl-4 md:pl-16 relative">
+                <h2 class="text-xl md:text-2xl font-bold mb-3">Terror</h2>
+                <div class="relative">
+                    <div id="carousel-horror" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
+                        <!-- Conteúdo será carregado via JS -->
+                    </div>
+                    <div id="horror-left-arrow" class="nav-arrow left-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                    <div id="horror-right-arrow" class="nav-arrow right-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fileira de Romance -->
+            <div class="row-container mb-8 pl-4 md:pl-16 relative">
+                <h2 class="text-xl md:text-2xl font-bold mb-3">Romance</h2>
+                <div class="relative">
+                    <div id="carousel-romance" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
+                        <!-- Conteúdo será carregado via JS -->
+                    </div>
+                    <div id="romance-left-arrow" class="nav-arrow left-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                    <div id="romance-right-arrow" class="nav-arrow right-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fileira de Animes -->
+            <div class="row-container mb-8 pl-4 md:pl-16 relative">
+                <h2 class="text-xl md:text-2xl font-bold mb-3">Animes</h2>
+                <div class="relative">
+                    <div id="carousel-anime" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
+                        <!-- Conteúdo será carregado via JS -->
+                    </div>
+                    <div id="anime-left-arrow" class="nav-arrow left-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                    <div id="anime-right-arrow" class="nav-arrow right-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+            </div>
             
+            <!-- Fileira de Séries Coreanas -->
+            <div class="row-container mb-8 pl-4 md:pl-16 relative">
+                <h2 class="text-xl md:text-2xl font-bold mb-3">Séries Coreanas</h2>
+                <div class="relative">
+                    <div id="carousel-korean" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
+                        <!-- Conteúdo será carregado via JS -->
+                    </div>
+                    <div id="korean-left-arrow" class="nav-arrow left-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                    <div id="korean-right-arrow" class="nav-arrow right-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+            </div>
+
         </section>
 
         <section id="search-results-section" class="hidden relative z-20 pb-10 px-4 md:px-16 transition-opacity duration-500 ease-in-out opacity-0">

@@ -109,7 +109,7 @@ A aplicação será carregada, e os carrosséis devem começar a exibir os pôst
 
 
 
-O projeto Netflix Clone (TMDb) foi desenvolvido por:
+O projeto Sessão Play (TMDb) foi desenvolvido por:
 
 
 

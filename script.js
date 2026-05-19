@@ -542,8 +542,7 @@ async function loadFavoritesCarousel(carouselId, imageSize = 'w500') {
         const mediaType = item.media_type || (item.title ? 'movie' : 'tv'); 
 
         const posterDiv = document.createElement('div');
-        // w-32 no mobile para mostrar 2.5 pôsteres e indicar scroll lateral
-        posterDiv.className = 'w-32 sm:w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item'; 
+        posterDiv.className = 'w-36 sm:w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item'; 
         posterDiv.innerHTML = `<img src="${posterUrl}" alt="${title}" class="w-full h-auto object-cover rounded hover:shadow-xl" loading="lazy">`;
 
         posterDiv.addEventListener('click', () => {
@@ -595,8 +594,7 @@ async function fetchAndLoadCarousel(fetchUrl, carouselId, imageSize = 'w500', re
                 const title = item.title || item.name; 
 
                 const posterDiv = document.createElement('div');
-                // Sincronizando com a largura reduzida no mobile
-                posterDiv.className = 'w-32 sm:w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item'; 
+                posterDiv.className = 'w-36 sm:w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item'; 
                 posterDiv.innerHTML = `<img src="${posterUrl}" alt="${title}" class="w-full h-auto object-cover rounded hover:shadow-xl" loading="lazy">`;
 
                 posterDiv.addEventListener('click', () => {

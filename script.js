@@ -47,6 +47,22 @@ const ENDPOINTS = {
     koreanTv: `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${LANGUAGE}&with_origin_country=${COUNTRIES.KOREA}`
 };
 
+// Mapeamento centralizado dos carrosséis para facilitar manutenção e inicialização
+const CAROUSELS_CONFIG = [
+    { id: 'carousel-tendencias', h2Selector: '#carousels > div:nth-child(1) h2', originalTitle: 'Tendências da Semana', endpoint: ENDPOINTS.trending, loader: fetchAndLoadCarousel, arrows: { left: 'tendencias-left-arrow', right: 'tendencias-right-arrow' } },
+    { id: 'carousel-top10-movies', h2Selector: '#carousels > div:nth-child(2) h2', originalTitle: 'Top 10 Filmes no Brasil', endpoint: ENDPOINTS.popularMovies, type: 'movie', loader: fetchAndLoadTop10Carousel, arrows: { left: 'top10-movies-left-arrow', right: 'top10-movies-right-arrow' } },
+    { id: 'carousel-top10-series', h2Selector: '#carousels > div:nth-child(3) h2', originalTitle: 'Top 10 Séries no Brasil', endpoint: ENDPOINTS.popularTv, type: 'tv', loader: fetchAndLoadTop10Carousel, arrows: { left: 'top10-series-left-arrow', right: 'top10-series-right-arrow' } },
+    { id: 'carousel-lancamentos', h2Selector: '#carousels > div:nth-child(4) h2', originalTitle: 'Últimos Lançamentos', endpoint: ENDPOINTS.latestReleases, type: 'movie', loader: fetchAndLoadCarousel, arrows: { left: 'lancamentos-left-arrow', right: 'lancamentos-right-arrow' } },
+    { id: 'carousel-populares', h2Selector: '#carousels > div:nth-child(5) h2', originalTitle: 'Filmes Populares', endpoint: ENDPOINTS.popularMovies, loader: fetchAndLoadCarousel, arrows: { left: 'populares-left-arrow', right: 'populares-right-arrow' } },
+    { id: 'carousel-series', h2Selector: '#carousels > div:nth-child(6) h2', originalTitle: 'Séries Mais Votadas', endpoint: ENDPOINTS.topRatedTv, loader: fetchAndLoadCarousel, arrows: { left: 'series-left-arrow', right: 'series-right-arrow' } },
+    { id: 'carousel-action', h2Selector: '#carousels > div:nth-child(7) h2', originalTitle: 'Ação', endpoint: ENDPOINTS.actionMovies, type: 'movie', loader: fetchAndLoadCarousel, arrows: { left: 'action-left-arrow', right: 'action-right-arrow' } },
+    { id: 'carousel-comedy', h2Selector: '#carousels > div:nth-child(8) h2', originalTitle: 'Comédia', endpoint: ENDPOINTS.comedyMovies, type: 'movie', loader: fetchAndLoadCarousel, arrows: { left: 'comedy-left-arrow', right: 'comedy-right-arrow' } },
+    { id: 'carousel-horror', h2Selector: '#carousels > div:nth-child(9) h2', originalTitle: 'Terror', endpoint: ENDPOINTS.horrorMovies, type: 'movie', loader: fetchAndLoadCarousel, arrows: { left: 'horror-left-arrow', right: 'horror-right-arrow' } },
+    { id: 'carousel-romance', h2Selector: '#carousels > div:nth-child(10) h2', originalTitle: 'Romance', endpoint: ENDPOINTS.romanceMovies, type: 'movie', loader: fetchAndLoadCarousel, arrows: { left: 'romance-left-arrow', right: 'romance-right-arrow' } },
+    { id: 'carousel-anime', h2Selector: '#carousels > div:nth-child(11) h2', originalTitle: 'Animes', endpoint: ENDPOINTS.anime, type: 'tv', loader: fetchAndLoadCarousel, arrows: { left: 'anime-left-arrow', right: 'anime-right-arrow' } },
+    { id: 'carousel-korean', h2Selector: '#carousels > div:nth-child(12) h2', originalTitle: 'Séries Coreanas', endpoint: ENDPOINTS.koreanTv, type: 'tv', loader: fetchAndLoadCarousel, arrows: { left: 'korean-left-arrow', right: 'korean-right-arrow' } }
+];
+
 // =========================================================
 //                  1. FUNÇÕES DE LOCALSTORAGE (MINHA LISTA)
 // =========================================================
@@ -83,6 +99,59 @@ function toggleFavorite(id, mediaType) {
     }
 }
 
+// =========================================================
+//                  1.1 FUNÇÕES DE CURTIDAS (GOSTEI)
+// =========================================================
+
+const LIKES_KEY = 'netflixCloneLikes';
+
+function getLikes() {
+    const likes = localStorage.getItem(LIKES_KEY);
+    try {
+        return likes ? JSON.parse(likes) : {};
+    } catch (e) {
+        console.error("Erro ao carregar curtidas do LocalStorage:", e);
+        return {};
+    }
+}
+
+function isLiked(id) {
+    const likes = getLikes();
+    return likes.hasOwnProperty(String(id));
+}
+
+function toggleLike(id) {
+    const likes = getLikes();
+    const stringId = String(id);
+
+    if (likes.hasOwnProperty(stringId)) {
+        delete likes[stringId];
+        localStorage.setItem(LIKES_KEY, JSON.stringify(likes));
+        return false;
+    } else {
+        likes[stringId] = true;
+        localStorage.setItem(LIKES_KEY, JSON.stringify(likes));
+        return true;
+    }
+}
+
+/**
+ * Traduz um texto usando a API pública MyMemory.
+ * @param {string} text Texto original em inglês.
+ * @returns {string} Texto traduzido para português ou o original em caso de falha.
+ */
+async function translateText(text) {
+    if (!text) return '';
+    try {
+        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|pt`);
+        const data = await response.json();
+        return data.responseData.translatedText || text;
+    } catch (error) {
+        console.error("Erro na tradução do comentário:", error);
+        return text;
+    }
+}
+
 
 // =========================================================
 //                  2. EFEITO STICKY DO HEADER
@@ -92,11 +161,11 @@ const header = document.getElementById('main-header');
 
 window.addEventListener('scroll', () => {
     if (window.scrollY > 50) {
-        header.classList.add('bg-black', 'shadow-lg', 'py-3');
-        header.classList.remove('py-4');
+        header.classList.add('bg-[#141414]', 'shadow-2xl', 'py-2');
+        header.classList.remove('py-4', 'bg-gradient-to-b', 'from-black/80');
     } else {
-        header.classList.remove('bg-black', 'shadow-lg', 'py-3');
-        header.classList.add('py-4');
+        header.classList.remove('bg-[#141414]', 'shadow-2xl', 'py-2');
+        header.classList.add('py-4', 'bg-gradient-to-b', 'from-black/80');
     }
 });
 
@@ -205,28 +274,66 @@ function updateFavoriteButton(itemId, mediaType) {
             <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
             Remover da Lista
         `;
-        favButton.classList.remove('bg-gray-600', 'bg-opacity-70');
-        favButton.classList.add('bg-red-600');
+        favButton.className = "btn-netflix flex items-center justify-center w-full px-4 py-3 bg-[#E50914] text-white font-bold rounded";
     } else {
         favButton.innerHTML = `
             <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
             Adicionar à Lista
         `;
-        favButton.classList.remove('bg-red-600');
-        favButton.classList.add('bg-gray-600', 'bg-opacity-70');
+        favButton.className = "btn-netflix flex items-center justify-center w-full px-4 py-3 bg-gray-500/50 backdrop-blur-md text-white font-bold rounded border border-white/10";
     }
+    
+    // Adicionamos a classe btn-netflix também ao botão de trailer e voltar
+    document.getElementById('modal-trailer-btn').className = "btn-netflix hidden flex items-center justify-center w-full px-4 py-3 bg-white text-black font-bold rounded";
+    document.getElementById('modal-back-btn').className = "btn-netflix hidden flex items-center justify-center w-full px-4 py-3 bg-gray-500/50 backdrop-blur-md text-white font-bold rounded border border-white/10";
+    document.getElementById('modal-like-btn').className = "btn-netflix flex items-center justify-center w-full px-4 py-3 bg-gray-500/50 backdrop-blur-md text-white font-bold rounded border border-white/10";
 
     favButton.onclick = () => {
         const wasAdded = toggleFavorite(itemId, mediaType);
         updateFavoriteButton(itemId, mediaType); 
-        
-        console.log(wasAdded ? 'Adicionado à Minha Lista!' : 'Removido da Minha Lista!');
         
         if (currentMediaType === 'favorites' && !wasAdded) {
             loadAllCarousels();
         }
     };
 }
+
+/**
+ * Atualiza o botão de Curtir no Modal.
+ */
+function updateLikeButton(itemId) {
+    const liked = isLiked(itemId);
+    const likeButton = document.getElementById('modal-like-btn');
+    
+    if (liked) {
+        likeButton.innerHTML = `
+            <svg class="w-6 h-6 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-.1z"/></svg>
+            Gostei
+        `;
+        likeButton.classList.add('border-blue-400');
+    } else {
+        likeButton.innerHTML = `
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"></path></svg>
+            Classificar
+        `;
+        likeButton.classList.remove('border-blue-400');
+    }
+
+    likeButton.onclick = () => {
+        const isNowLiked = toggleLike(itemId);
+        updateLikeButton(itemId);
+        if (isNowLiked) {
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#E50914', '#ffffff', '#b3b3b3'],
+                zIndex: 9999
+            });
+        }
+    };
+}
+
 
 
 /**
@@ -248,9 +355,13 @@ async function openModal(itemId, mediaType) {
         // 2. Requisições em paralelo para detalhes e vídeos
         const detailUrl = `${BASE_URL}/${mediaType}/${itemId}?api_key=${API_KEY}&language=${LANGUAGE}`;
         const videosUrl = `${BASE_URL}/${mediaType}/${itemId}/videos?api_key=${API_KEY}&language=${LANGUAGE}`;
-        const [detailsResponse, videosResponse] = await Promise.all([fetch(detailUrl), fetch(videosUrl)]);
+        const creditsUrl = `${BASE_URL}/${mediaType}/${itemId}/credits?api_key=${API_KEY}&language=${LANGUAGE}`;
+        const reviewsUrl = `${BASE_URL}/${mediaType}/${itemId}/reviews?api_key=${API_KEY}`; // Reviews geralmente funcionam melhor sem filtro de língua
+        const [detailsResponse, videosResponse, creditsResponse, reviewsResponse] = await Promise.all([fetch(detailUrl), fetch(videosUrl), fetch(creditsUrl), fetch(reviewsUrl)]);
         const details = await detailsResponse.json();
         const videosData = await videosResponse.json();
+        const creditsData = await creditsResponse.json();
+        const reviewsData = await reviewsResponse.json();
 
         // 3. Esconder loader e mostrar conteúdo
         modalLoader.classList.add('hidden');
@@ -287,8 +398,66 @@ async function openModal(itemId, mediaType) {
             document.getElementById('modal-backdrop').style.backgroundImage = `url('${IMAGE_BASE_URL}w1280${backdropPath}')`;
         }
         
+        // 5. PREENCHER O ELENCO
+        const castContainer = document.getElementById('modal-cast');
+        castContainer.innerHTML = '';
+        
+        // Pegamos os 12 primeiros atores
+        creditsData.cast.slice(0, 12).forEach(actor => {
+            const actorDiv = document.createElement('div');
+            actorDiv.className = 'flex-shrink-0 w-24 text-center';
+            
+            // Fallback para quando o ator não tem foto
+            const profileUrl = actor.profile_path 
+                ? `${IMAGE_BASE_URL}w185${actor.profile_path}` 
+                : 'https://via.placeholder.com/185x278?text=Sem+Foto';
+
+            actorDiv.innerHTML = `
+                <img src="${profileUrl}" alt="${actor.name}" class="w-full h-32 object-cover rounded-lg mb-2 shadow-md">
+                <p class="text-xs font-bold text-white truncate">${actor.name}</p>
+                <p class="text-[10px] text-gray-400 truncate">${actor.character}</p>
+            `;
+            castContainer.appendChild(actorDiv);
+        });
+
+        // 6. PREENCHER COMENTÁRIOS
+        const reviewsContainer = document.getElementById('modal-reviews');
+        reviewsContainer.innerHTML = '';
+
+        if (reviewsData.results && reviewsData.results.length > 0) {
+            // Traduzimos os conteúdos em paralelo antes de renderizar
+            const reviewsToDisplay = reviewsData.results.slice(0, 3);
+            
+            const translatedReviews = await Promise.all(reviewsToDisplay.map(async (review) => {
+                const shortContent = review.content.length > 300 
+                    ? review.content.substring(0, 300) + '...' 
+                    : review.content;
+                
+                const translated = await translateText(shortContent);
+                return { ...review, translatedContent: translated };
+            }));
+
+            translatedReviews.forEach(review => {
+                const reviewDiv = document.createElement('div');
+                reviewDiv.className = 'bg-gray-900/50 p-4 rounded-lg border border-gray-700';
+                
+                reviewDiv.innerHTML = `
+                    <div class="flex items-center mb-2">
+                        <span class="font-bold text-red-500 mr-2">${review.author}</span>
+                        <span class="text-[10px] text-gray-500">${new Date(review.created_at).toLocaleDateString('pt-BR')}</span>
+                        <span class="ml-auto text-[9px] text-gray-600 uppercase tracking-widest">Traduzido</span>
+                    </div>
+                    <p class="text-sm text-gray-300 italic leading-relaxed">"${review.translatedContent}"</p>
+                `;
+                reviewsContainer.appendChild(reviewDiv);
+            });
+        } else {
+            reviewsContainer.innerHTML = '<p class="text-gray-500 text-sm italic">Ainda não há avaliações de usuários para este título.</p>';
+        }
+
         // 5. ATUALIZA O BOTÃO DE FAVORITAR
         updateFavoriteButton(itemId, mediaType); 
+        updateLikeButton(itemId);
 
         // 6. LÓGICA DO TRAILER
         const officialTrailer = videosData.results.find(video => video.type === 'Trailer' && video.site === 'YouTube');
@@ -373,8 +542,8 @@ async function loadFavoritesCarousel(carouselId, imageSize = 'w500') {
         const mediaType = item.media_type || (item.title ? 'movie' : 'tv'); 
 
         const posterDiv = document.createElement('div');
-        // Adicionando as classes de largura que estavam faltando na versão anterior
-        posterDiv.className = 'w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item'; 
+        // w-32 no mobile para mostrar 2.5 pôsteres e indicar scroll lateral
+        posterDiv.className = 'w-32 sm:w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item'; 
         posterDiv.innerHTML = `<img src="${posterUrl}" alt="${title}" class="w-full h-auto object-cover rounded hover:shadow-xl" loading="lazy">`;
 
         posterDiv.addEventListener('click', () => {
@@ -426,8 +595,8 @@ async function fetchAndLoadCarousel(fetchUrl, carouselId, imageSize = 'w500', re
                 const title = item.title || item.name; 
 
                 const posterDiv = document.createElement('div');
-                // Adicionando as classes de largura
-                posterDiv.className = 'w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item'; 
+                // Sincronizando com a largura reduzida no mobile
+                posterDiv.className = 'w-32 sm:w-40 md:w-56 flex-shrink-0 cursor-pointer poster-item'; 
                 posterDiv.innerHTML = `<img src="${posterUrl}" alt="${title}" class="w-full h-auto object-cover rounded hover:shadow-xl" loading="lazy">`;
 
                 posterDiv.addEventListener('click', () => {
@@ -477,7 +646,7 @@ async function fetchAndLoadTop10Carousel(fetchUrl, carouselId, mediaType) {
                         <span>${index + 1}</span>
                     </div>
                     <div class="top-10-poster">
-                        <img src="${posterUrl}" alt="${title}" class="w-full h-auto object-cover rounded" loading="lazy">
+                        <img src="${posterUrl}" alt="${title}" class="w-full h-full object-cover" loading="lazy">
                     </div>
                 `;
 
@@ -511,22 +680,6 @@ async function fetchAndLoadTop10Carousel(fetchUrl, carouselId, mediaType) {
  * ESSA FUNÇÃO RESOLVE O PROBLEMA DE EXIBIÇÃO.
  */
 function loadAllCarousels() {
-    // Mapeamento dos carrosséis com seus títulos originais
-    const carouselsData = [
-        { id: 'carousel-tendencias', h2Selector: '#carousels > div:nth-child(1) h2', originalTitle: 'Tendências da Semana', endpoint: ENDPOINTS.trending, loader: fetchAndLoadCarousel },
-        { id: 'carousel-top10-movies', h2Selector: '#carousels > div:nth-child(2) h2', originalTitle: 'Top 10 Filmes no Brasil', endpoint: ENDPOINTS.popularMovies, type: 'movie', loader: fetchAndLoadTop10Carousel },
-        { id: 'carousel-top10-series', h2Selector: '#carousels > div:nth-child(3) h2', originalTitle: 'Top 10 Séries no Brasil', endpoint: ENDPOINTS.popularTv, type: 'tv', loader: fetchAndLoadTop10Carousel },
-        { id: 'carousel-lancamentos', h2Selector: '#carousels > div:nth-child(4) h2', originalTitle: 'Últimos Lançamentos', endpoint: ENDPOINTS.latestReleases, type: 'movie', loader: fetchAndLoadCarousel },
-        { id: 'carousel-populares', h2Selector: '#carousels > div:nth-child(5) h2', originalTitle: 'Filmes Populares', endpoint: ENDPOINTS.popularMovies, loader: fetchAndLoadCarousel },
-        { id: 'carousel-series', h2Selector: '#carousels > div:nth-child(6) h2', originalTitle: 'Séries Mais Votadas', endpoint: ENDPOINTS.topRatedTv, loader: fetchAndLoadCarousel },
-        { id: 'carousel-action', h2Selector: '#carousels > div:nth-child(7) h2', originalTitle: 'Ação', endpoint: ENDPOINTS.actionMovies, type: 'movie', loader: fetchAndLoadCarousel },
-        { id: 'carousel-comedy', h2Selector: '#carousels > div:nth-child(8) h2', originalTitle: 'Comédia', endpoint: ENDPOINTS.comedyMovies, type: 'movie', loader: fetchAndLoadCarousel },
-        { id: 'carousel-horror', h2Selector: '#carousels > div:nth-child(9) h2', originalTitle: 'Terror', endpoint: ENDPOINTS.horrorMovies, type: 'movie', loader: fetchAndLoadCarousel },
-        { id: 'carousel-romance', h2Selector: '#carousels > div:nth-child(10) h2', originalTitle: 'Romance', endpoint: ENDPOINTS.romanceMovies, type: 'movie', loader: fetchAndLoadCarousel },
-        { id: 'carousel-anime', h2Selector: '#carousels > div:nth-child(11) h2', originalTitle: 'Animes', endpoint: ENDPOINTS.anime, type: 'tv', loader: fetchAndLoadCarousel },
-        { id: 'carousel-korean', h2Selector: '#carousels > div:nth-child(12) h2', originalTitle: 'Séries Coreanas', endpoint: ENDPOINTS.koreanTv, type: 'tv', loader: fetchAndLoadCarousel }
-    ];
-
     const carouselsContainer = document.getElementById('carousels');
     // Seleciona todos os divs 'row-container' para controlar a visibilidade.
     const allRowContainers = carouselsContainer.querySelectorAll('.row-container');
@@ -540,22 +693,22 @@ function loadAllCarousels() {
         });
         
         // 2. Renomeia o título do primeiro carrossel e GARANTE que ele está visível
-        document.querySelector(carouselsData[0].h2Selector).textContent = 'Minha Lista';
+        document.querySelector(CAROUSELS_CONFIG[0].h2Selector).textContent = 'Minha Lista';
         allRowContainers[0].style.display = 'block'; 
         
         // 3. Carrega SÓ a lista de favoritos no primeiro carrossel
-        fetchAndLoadCarousel(null, carouselsData[0].id, 'w342', 'favorites');
+        fetchAndLoadCarousel(null, CAROUSELS_CONFIG[0].id, 'w342', 'favorites');
 
     } else {
         // --- MODO NORMAL (all, movie, tv) ---
         
         // 2. Restaura os títulos originais
-        carouselsData.forEach(c => {
+        CAROUSELS_CONFIG.forEach(c => {
             const titleElement = document.querySelector(c.h2Selector);
             if (titleElement) titleElement.textContent = c.originalTitle;
         });
 
-        carouselsData.forEach((carousel, index) => {
+        CAROUSELS_CONFIG.forEach((carousel, index) => {
             const rowContainer = allRowContainers[index];
             if (!rowContainer) return;
 
@@ -590,33 +743,68 @@ function loadAllCarousels() {
  */
 function setupFilterNavigation() {
     const filterButtons = document.querySelectorAll('.nav-filter');
-    
-    filterButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            const newType = button.getAttribute('data-type');
-            
-            if (newType === currentMediaType) return; 
+    const logo = document.getElementById('logo');
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const mobileDropdown = document.getElementById('mobile-dropdown');
 
-            currentMediaType = newType;
-            
-            // Remove o estilo ativo de todos e adiciona ao clicado
-            filterButtons.forEach(btn => {
-                btn.classList.remove('font-bold', 'text-white');
-                btn.classList.add('text-gray-400');
-            });
-            button.classList.add('font-bold', 'text-white');
-            button.classList.remove('text-gray-400');
-            
-            loadAllCarousels();
-            
-            // Scroll suave para os carrosséis
+    // Função interna para aplicar o filtro e atualizar a UI de forma síncrona
+    const applyFilter = (type) => {
+        // Se clicar em 'trending' (Bombando), tratamos como 'all' para carregar tudo
+        // mas você poderia implementar uma lógica específica aqui se quisesse.
+        const targetType = type === 'trending' ? 'all' : type;
+        
+        if (targetType === currentMediaType && type !== 'all') return;
+        
+        currentMediaType = targetType;
+
+        // Atualiza o estilo de TODOS os botões (desktop e mobile)
+        filterButtons.forEach(btn => {
+            const btnType = btn.getAttribute('data-type');
+            if (btnType === type) {
+                btn.classList.add('font-semibold', 'text-white');
+                btn.classList.remove('text-[#e5e5e5]');
+            } else {
+                btn.classList.remove('font-semibold', 'text-white');
+                btn.classList.add('text-[#e5e5e5]');
+            }
+        });
+
+        loadAllCarousels();
+        
+        // Comportamento de scroll
+        if (type === 'all') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
             const carouselsSection = document.getElementById('carousels');
             window.scrollTo({
                 top: carouselsSection.offsetTop - header.offsetHeight - 20, 
                 behavior: 'smooth'
             });
+        }
+        
+        // Fecha o menu mobile após o clique
+        mobileDropdown.classList.add('hidden');
+    };
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            applyFilter(button.getAttribute('data-type'));
         });
+    });
+
+    // Lógica do Logo para Resetar
+    logo.addEventListener('click', () => applyFilter('all'));
+
+    // Toggle do Menu Mobile
+    mobileBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Impede que o clique no botão propague para o document
+        mobileDropdown.classList.toggle('hidden');
+    });
+
+    // Fecha o menu mobile se clicar em qualquer lugar da tela
+    document.addEventListener('click', () => {
+        mobileDropdown.classList.add('hidden');
     });
 }
 
@@ -726,6 +914,7 @@ async function loadHeroBanner() {
 
 const searchIcon = document.getElementById('search-icon');
 const searchInput = document.getElementById('search-input');
+const clearSearchBtn = document.getElementById('clear-search');
 const carouselsSection = document.getElementById('carousels');
 const searchResultsSection = document.getElementById('search-results-section');
 const searchResultsGrid = document.getElementById('search-results-grid');
@@ -796,7 +985,12 @@ async function performSearch(query) {
         searchResultsGrid.innerHTML = '';
 
         if (items.length === 0) {
-            searchResultsGrid.innerHTML = '<p class="text-gray-400 col-span-full">Nenhum resultado encontrado.</p>';
+            searchResultsGrid.innerHTML = `
+                <div class="col-span-full py-20 text-center">
+                    <p class="text-gray-400 text-lg">Nenhum resultado encontrado para "${query}".</p>
+                    <p class="text-gray-500 text-sm mt-2">Tente buscar por outros termos, atores ou gêneros.</p>
+                </div>
+            `;
             return;
         }
 
@@ -851,17 +1045,13 @@ function setupSearch() {
 
 document.addEventListener('DOMContentLoaded', () => {
     loadHeroBanner();
-    setupCarouselNavigation('carousel-tendencias', 'tendencias-left-arrow', 'tendencias-right-arrow');
-    setupCarouselNavigation('carousel-populares', 'populares-left-arrow', 'populares-right-arrow');
-    setupCarouselNavigation('carousel-series', 'series-left-arrow', 'series-right-arrow');
-    setupCarouselNavigation('carousel-action', 'action-left-arrow', 'action-right-arrow');
-    setupCarouselNavigation('carousel-comedy', 'comedy-left-arrow', 'comedy-right-arrow');
-    setupCarouselNavigation('carousel-anime', 'anime-left-arrow', 'anime-right-arrow');
-    setupCarouselNavigation('carousel-horror', 'horror-left-arrow', 'horror-right-arrow');
-    setupCarouselNavigation('carousel-lancamentos', 'lancamentos-left-arrow', 'lancamentos-right-arrow');
-    setupCarouselNavigation('carousel-romance', 'romance-left-arrow', 'romance-right-arrow');
-    setupCarouselNavigation('carousel-korean', 'korean-left-arrow', 'korean-right-arrow');
-    
+    // Inicializa a navegação de todos os carrosséis baseada na config
+    CAROUSELS_CONFIG.forEach(carousel => {
+        if (carousel.arrows) {
+            setupCarouselNavigation(carousel.id, carousel.arrows.left, carousel.arrows.right);
+        }
+    });
+
     setupFilterNavigation();
     setupSearch(); // <-- Adicionando a configuração da busca
     

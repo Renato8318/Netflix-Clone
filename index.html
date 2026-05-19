@@ -4,16 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="W7Bx4AgVe6ybGBH84qOHRq3YGaNuyL0wrG2l6dkzpEY" />
-    <title>Netflix Clone Aprimorado (TMDb)</title>
+    <title>Sessão Play | Filmes e Séries</title>
+    <!-- Importação de fonte moderna -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Estilos Customizados */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
         .poster-item {
-            transition: transform 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border-radius: 4px;
+            overflow: hidden; /* Garante que o zoom da imagem fique contido no card */
         }
         .poster-item:hover {
             transform: scale(1.05);
             z-index: 10;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.7);
+        }
+        /* Efeito de zoom suave especificamente na imagem */
+        .poster-item img {
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .poster-item:hover img {
+            transform: scale(1.1);
         }
         /* Configurações de rolagem suave e oculta */
         .carousel-row::-webkit-scrollbar { display: none; }
@@ -22,8 +37,8 @@
             scroll-behavior: smooth;
         }
         .hero-vignette {
-            background-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 1) 100%),
-                              linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0) 100%);
+            background-image: linear-gradient(to right, rgba(20, 20, 20, 1) 0%, rgba(20, 20, 20, 0.4) 40%, rgba(20, 20, 20, 0.1) 100%),
+                              linear-gradient(to top, rgba(20, 20, 20, 1) 0%, rgba(20, 20, 20, 0) 25%);
         }
         /* Estilo para as setas de navegação */
         .nav-arrow {
@@ -60,7 +75,7 @@
 
             /* Reduz o tamanho dos pôsteres nos carrosséis */
             .poster-item {
-                width: 120px; /* Largura fixa menor para telas estreitas */
+                width: 128px; /* w-32 do Tailwind para consistência */
             }
 
             /* Ajusta o título das seções de carrossel */
@@ -77,76 +92,129 @@
 
         /* Estilos para o Carrossel Top 10 */
         .top-10-item {
+            position: relative;
             display: flex;
             align-items: flex-end;
-            margin-right: -30px; /* Sobrepõe os números nos pôsteres */
+            margin-right: 1.5rem;
             transition: transform 0.3s ease;
+            min-width: 160px;
         }
         .top-10-item:hover {
-            transform: scale(1.1);
-            z-index: 20;
+            transform: translateY(-5px); /* Menos subida */
         }
+
+        /* Estilo Base para Botões Estilo Netflix */
+        .btn-netflix {
+            transition: all 0.2s ease;
+        }
+        .btn-netflix:hover {
+            transform: scale(1.05);
+        }
+        .btn-netflix:active {
+            transform: scale(0.95);
+        }
+
         .top-10-number {
-            font-size: 8rem; /* Tamanho gigante para o número */
-            font-weight: bold;
-            line-height: 0.7;
-            color: #1a202c; /* bg-gray-900 */
-            -webkit-text-stroke: 4px #a0aec0; /* text-gray-400 */
-            text-stroke: 4px #a0aec0;
-            z-index: 1;
+            font-size: 12rem;
+            font-weight: 900;
+            line-height: 0.8;
+            color: transparent;
+            -webkit-text-stroke: 2px rgba(255, 255, 255, 0.4);
+            margin-right: -45px;
+            user-select: none;
+            z-index: 0;
+            letter-spacing: -12px;
         }
         .top-10-poster {
-            width: 144px; /* w-36 */
-            margin-left: -1.5rem; /* Ajuste para o número ficar atrás */
-            z-index: 2;
+            width: 140px;
+            z-index: 10;
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.5);
+            border-radius: 4px;
+            overflow: hidden;
+            transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        /* Zoom no pôster do Top 10 */
+        .top-10-item:hover .top-10-poster {
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
         }
         .top-10-poster img {
-            border: 2px solid white;
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
-        /* Ajuste para telas menores */
-        @media (max-width: 768px) {
-            .top-10-number { font-size: 6rem; -webkit-text-stroke-width: 3px; text-stroke-width: 3px; }
-            .top-10-poster { width: 112px; } /* w-28 */
+        .top-10-item:hover .top-10-poster img {
+            transform: scale(1.1);
+        }
+
+        /* Efeito Neon no Hover do Top 10 */
+        .top-10-item:hover .top-10-number {
+            -webkit-text-stroke: 2px #E50914;
+            filter: drop-shadow(0 0 8px rgba(229, 9, 20, 0.8)) drop-shadow(0 0 15px rgba(229, 9, 20, 0.4));
+            transition: all 0.3s ease;
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white font-sans">
+<body class="bg-[#141414] text-white font-sans overflow-x-hidden">
 
-    <header id="main-header" class="fixed top-0 left-0 w-full z-50 py-4 transition duration-300">
+    <header id="main-header" class="fixed top-0 left-0 w-full z-50 py-4 transition-all duration-500 ease-in-out bg-gradient-to-b from-black/90 to-transparent">
         <div class="flex justify-between items-center max-w-7xl mx-auto px-4">
             <div class="flex flex-col md:flex-row md:items-center md:space-x-8">
-                <h1 class="text-3xl sm:text-4xl font-bold tracking-wider bg-gradient-to-r from-red-500 to-orange-400 bg-clip-text text-transparent">Sessão Play</h1>
-                <nav class="flex space-x-4 md:space-x-6 text-sm mt-2 md:mt-0">
-                    <a href="#" id="nav-all" data-type="all" class="nav-filter text-white hover:text-gray-300 font-bold">Todos</a>
-                    <a href="#" id="nav-series" data-type="tv" class="nav-filter text-gray-400 hover:text-gray-300">Séries</a>
-                    <a href="#" id="nav-movies" data-type="movie" class="nav-filter text-gray-400 hover:text-gray-300">Filmes</a>
-                    <a href="#" id="nav-favorites" data-type="favorites" class="nav-filter text-gray-400 hover:text-gray-300">Minha Lista</a>
+                <h1 id="logo" class="text-3xl sm:text-4xl font-black tracking-tighter text-[#E50914] hover:scale-105 transition-transform cursor-pointer">SESSÃO PLAY</h1>
+                
+                <!-- Navegação Desktop -->
+                <nav class="hidden lg:flex space-x-6 text-sm mt-1">
+                    <a href="#" data-type="all" class="nav-filter text-white font-semibold transition-all duration-300">Início</a>
+                    <a href="#" data-type="tv" class="nav-filter text-[#e5e5e5] hover:text-[#b3b3b3] transition-all duration-300">Séries</a>
+                    <a href="#" data-type="movie" class="nav-filter text-[#e5e5e5] hover:text-[#b3b3b3] transition-all duration-300">Filmes</a>
+                    <a href="#" data-type="trending" class="nav-filter text-[#e5e5e5] hover:text-[#b3b3b3] transition-all duration-300">Bombando</a>
+                    <a href="#" data-type="favorites" class="nav-filter text-[#e5e5e5] hover:text-[#b3b3b3] transition-all duration-300">Minha Lista</a>
                 </nav>
+
+                <!-- Navegação Mobile (Botão Navegar) -->
+                <div class="lg:hidden relative mt-2 md:mt-0 group">
+                    <button id="mobile-menu-btn" class="text-xs font-bold flex items-center text-white">
+                        Navegar 
+                        <svg class="w-3 h-3 ml-1 fill-current" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                    </button>
+                    <!-- Dropdown Menu -->
+                    <div id="mobile-dropdown" class="hidden absolute top-full left-1/2 -translate-x-1/2 mt-4 w-64 bg-black/95 border-t-2 border-white py-4 flex flex-col items-center space-y-4 shadow-2xl z-[60]">
+                        <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-white"></div>
+                        <a href="#" data-type="all" class="nav-filter text-white font-bold text-sm transition-colors">Início</a>
+                        <a href="#" data-type="tv" class="nav-filter text-gray-300 text-sm transition-colors">Séries</a>
+                        <a href="#" data-type="movie" class="nav-filter text-gray-300 text-sm transition-colors">Filmes</a>
+                        <a href="#" data-type="trending" class="nav-filter text-gray-300 text-sm transition-colors">Bombando</a>
+                        <a href="#" data-type="favorites" class="nav-filter text-gray-300 text-sm transition-colors">Minha Lista</a>
+                    </div>
+                </div>
             </div>
             <div class="flex items-center space-x-2 sm:space-x-4">
-                <input type="text" id="search-input" placeholder="Buscar..." class="hidden w-32 sm:w-48 bg-gray-800 border border-gray-600 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300">
-                <svg id="search-icon" class="w-6 h-6 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <div class="relative flex items-center">
+                    <input type="text" id="search-input" placeholder="Títulos, gente, gêneros" aria-label="Buscar filmes e séries" class="hidden w-32 sm:w-64 bg-black/50 border border-white/20 rounded-none pl-3 pr-9 py-1.5 text-sm focus:outline-none focus:border-white transition-all duration-300">
+                    <button id="clear-search" class="absolute right-2 text-gray-400 hover:text-white hidden transition-colors duration-200" title="Limpar busca">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <svg id="search-icon" class="w-6 h-6 cursor-pointer" aria-label="Abrir busca" role="button" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="Perfil" class="h-8 w-8 rounded cursor-pointer">
             </div>
         </div>
     </header>
 
     <main>
-        <section class="relative h-screen flex items-center justify-center">
+        <section class="relative h-[65vh] md:h-screen flex items-center justify-center">
             <div id="hero-banner" class="absolute inset-0 bg-cover bg-center transition-all duration-500" style="background-image: url('https://image.tmdb.org/t/p/original/rMvTnqYcWc7jGnsrS9lqX5s8V2Y.jpg');"></div>
             <div class="hero-vignette absolute inset-0"></div>
 
-            <div class="absolute bottom-1/4 left-0 md:left-16 p-4 md:p-0 max-w-lg z-10">
+            <div class="absolute bottom-[20%] md:bottom-1/4 left-0 md:left-16 p-4 md:p-0 max-w-lg z-10 w-full md:w-auto text-center md:text-left">
                 <h1 id="hero-title" class="text-3xl md:text-5xl lg:text-7xl font-bold mb-4 drop-shadow-lg">Carregando Destaque...</h1>
                 <p id="hero-overview" class="text-lg mb-6 drop-shadow-lg hidden md:block">
                     Aguardando dados da API.
                 </p>
-                <div class="flex space-x-4 hero-buttons">
-                    <button class="flex items-center px-6 py-2 bg-white text-black font-bold rounded hover:bg-gray-300 transition duration-200">
+                <div class="flex justify-center md:justify-start space-x-3 md:space-x-4 hero-buttons">
+                    <button class="btn-netflix flex items-center px-6 md:px-8 py-2 bg-white text-black font-bold rounded hover:bg-white/90 text-sm md:text-base">
                         <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 3l15 9-15 9V3z"></path></svg>
                         Assistir
                     </button>
-                    <button class="flex items-center px-6 py-2 bg-gray-600 bg-opacity-70 text-white font-bold rounded hover:bg-gray-500 transition duration-200">
+                    <button class="btn-netflix flex items-center px-6 md:px-8 py-2 bg-gray-500/50 backdrop-blur-md text-white font-bold rounded hover:bg-gray-500/70 border border-white/10 text-sm md:text-base">
                         <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         Mais Detalhes
                     </button>
@@ -154,10 +222,10 @@
             </div>
         </section>
 
-        <section id="carousels" class="relative -mt-24 z-20 pb-10 transition-opacity duration-500 ease-in-out">
+        <section id="carousels" class="relative -mt-10 md:-mt-24 z-20 pb-10 transition-opacity duration-500 ease-in-out">
             
             <div class="mb-8 pl-4 md:pl-16 row-container relative">
-                <h2 class="text-xl md:text-2xl font-bold mb-3">Tendências da Semana</h2>
+                <h2 class="text-lg md:text-[1.4vw] font-bold text-[#e5e5e5] mb-2 tracking-tight">Tendências da Semana</h2>
                 <div id="carousel-tendencias" class="flex overflow-x-scroll space-x-3 p-2 carousel-row">
                     </div>
                 <div id="tendencias-left-arrow" class="nav-arrow left-0 hidden md:flex">
@@ -170,27 +238,39 @@
 
             <!-- Fileira Top 10 Filmes -->
             <div class="row-container mb-8 pl-4 md:pl-16 relative">
-                <h2 class="text-xl md:text-2xl font-bold mb-3">Top 10 Filmes no Brasil</h2>
+                <h2 class="text-lg md:text-[1.4vw] font-bold text-[#e5e5e5] mb-2 tracking-tight">Top 10 Filmes no Brasil</h2>
                 <div class="relative">
                     <div id="carousel-top10-movies" class="carousel-row flex overflow-x-scroll space-x-8 p-2">
                         <!-- Conteúdo Top 10 será carregado via JS -->
+                    </div>
+                    <div id="top10-movies-left-arrow" class="nav-arrow left-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                    <div id="top10-movies-right-arrow" class="nav-arrow right-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </div>
                 </div>
             </div>
 
             <!-- Fileira Top 10 Séries -->
             <div class="row-container mb-8 pl-4 md:pl-16 relative">
-                <h2 class="text-xl md:text-2xl font-bold mb-3">Top 10 Séries no Brasil</h2>
+                <h2 class="text-lg md:text-[1.4vw] font-bold text-[#e5e5e5] mb-2 tracking-tight">Top 10 Séries no Brasil</h2>
                 <div class="relative">
                     <div id="carousel-top10-series" class="carousel-row flex overflow-x-scroll space-x-8 p-2">
                         <!-- Conteúdo Top 10 será carregado via JS -->
+                    </div>
+                    <div id="top10-series-left-arrow" class="nav-arrow left-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </div>
+                    <div id="top10-series-right-arrow" class="nav-arrow right-0 hidden md:flex">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </div>
                 </div>
             </div>
 
             <!-- Fileira de Lançamentos -->
             <div class="row-container mb-8 pl-4 md:pl-16 relative">
-                <h2 class="text-xl md:text-2xl font-bold mb-3">Últimos Lançamentos</h2>
+                <h2 class="text-lg md:text-[1.4vw] font-bold text-[#e5e5e5] mb-2 tracking-tight">Últimos Lançamentos</h2>
                 <div class="relative">
                     <div id="carousel-lancamentos" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
                         <!-- Conteúdo será carregado via JS -->
@@ -205,7 +285,7 @@
             </div>
 
             <div class="mb-8 pl-4 md:pl-16 row-container relative">
-                <h2 class="text-xl md:text-2xl font-bold mb-3">Filmes Populares</h2>
+                <h2 class="text-lg md:text-[1.4vw] font-bold text-[#e5e5e5] mb-2 tracking-tight">Filmes Populares</h2>
                 <div id="carousel-populares" class="flex overflow-x-scroll space-x-3 p-2 carousel-row">
                     </div>
                 <div id="populares-left-arrow" class="nav-arrow left-0 hidden md:flex">
@@ -217,7 +297,7 @@
             </div>
             
             <div class="mb-8 pl-4 md:pl-16 row-container relative">
-                <h2 class="text-xl md:text-2xl font-bold mb-3">Séries Mais Votadas</h2>
+                <h2 class="text-lg md:text-[1.4vw] font-bold text-[#e5e5e5] mb-2 tracking-tight">Séries Mais Votadas</h2>
                 <div id="carousel-series" class="flex overflow-x-scroll space-x-3 p-2 carousel-row">
                     </div>
                 <div id="series-left-arrow" class="nav-arrow left-0 hidden md:flex">
@@ -234,7 +314,7 @@
 
             <!-- Fileira de Ação -->
             <div class="row-container mb-8 pl-4 md:pl-16 relative">
-                <h2 class="text-xl md:text-2xl font-bold mb-3">Ação</h2>
+                <h2 class="text-lg md:text-[1.4vw] font-bold text-[#e5e5e5] mb-2 tracking-tight">Ação</h2>
                 <div class="relative">
                     <div id="carousel-action" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
                         <!-- Conteúdo será carregado via JS -->
@@ -250,7 +330,7 @@
 
             <!-- Fileira de Comédia -->
             <div class="row-container mb-8 pl-4 md:pl-16 relative">
-                <h2 class="text-xl md:text-2xl font-bold mb-3">Comédia</h2>
+                <h2 class="text-lg md:text-[1.4vw] font-bold text-[#e5e5e5] mb-2 tracking-tight">Comédia</h2>
                 <div class="relative">
                     <div id="carousel-comedy" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
                         <!-- Conteúdo será carregado via JS -->
@@ -266,7 +346,7 @@
 
             <!-- Fileira de Terror -->
             <div class="row-container mb-8 pl-4 md:pl-16 relative">
-                <h2 class="text-xl md:text-2xl font-bold mb-3">Terror</h2>
+                <h2 class="text-lg md:text-[1.4vw] font-bold text-[#e5e5e5] mb-2 tracking-tight">Terror</h2>
                 <div class="relative">
                     <div id="carousel-horror" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
                         <!-- Conteúdo será carregado via JS -->
@@ -282,7 +362,7 @@
 
             <!-- Fileira de Romance -->
             <div class="row-container mb-8 pl-4 md:pl-16 relative">
-                <h2 class="text-xl md:text-2xl font-bold mb-3">Romance</h2>
+                <h2 class="text-lg md:text-[1.4vw] font-bold text-[#e5e5e5] mb-2 tracking-tight">Romance</h2>
                 <div class="relative">
                     <div id="carousel-romance" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
                         <!-- Conteúdo será carregado via JS -->
@@ -298,7 +378,7 @@
 
             <!-- Fileira de Animes -->
             <div class="row-container mb-8 pl-4 md:pl-16 relative">
-                <h2 class="text-xl md:text-2xl font-bold mb-3">Animes</h2>
+                <h2 class="text-lg md:text-[1.4vw] font-bold text-[#e5e5e5] mb-2 tracking-tight">Animes</h2>
                 <div class="relative">
                     <div id="carousel-anime" class="carousel-row flex overflow-x-scroll space-x-3 p-2">
                         <!-- Conteúdo será carregado via JS -->
@@ -360,6 +440,8 @@
                     <div class="flex space-x-4">
                         <button id="modal-favorite-btn" class="flex items-center justify-center w-full px-4 py-3 bg-gray-600 bg-opacity-70 text-white font-bold rounded hover:bg-gray-500 transition duration-200">
                         </button>
+                        <button id="modal-like-btn" class="flex items-center justify-center w-full px-4 py-3 bg-gray-500/50 backdrop-blur-md text-white font-bold rounded border border-white/10 hover:bg-gray-500/70 transition duration-200">
+                        </button>
                         <button id="modal-trailer-btn" class="hidden flex items-center justify-center w-full px-4 py-3 bg-red-600 text-white font-bold rounded hover:bg-red-700 transition duration-200">
                             Ver Trailer
                         </button>
@@ -385,33 +467,68 @@
                         <p class="mb-2"><span class="text-gray-400">Duração/Episódios:</span> <span id="modal-runtime"></span></p>
                     </div>
                 </div>
+
+                <!-- Seção de Elenco -->
+                <div class="p-6 border-t border-gray-700">
+                    <h3 class="text-lg font-bold mb-4">Elenco Principal</h3>
+                    <div id="modal-cast" class="flex overflow-x-auto space-x-4 pb-4 carousel-row">
+                        <!-- Itens do elenco serão inseridos via JS -->
+                    </div>
+                </div>
+
+                <!-- Seção de Comentários -->
+                <div class="p-6 border-t border-gray-700">
+                    <h3 class="text-lg font-bold mb-4">O que as pessoas estão dizendo</h3>
+                    <div id="modal-reviews" class="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                        <!-- Comentários serão inseridos via JS -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
-    <footer class="bg-black py-8 text-gray-400 text-sm mt-10">
-        <div class="max-w-4xl mx-auto px-4 text-center space-y-4">
-            
-            <div class="p-2">
+    <footer class="bg-[#141414] py-16 text-[#808080] text-sm mt-10 border-t border-white/10">
+        <div class="max-w-5xl mx-auto px-4">
+            <!-- Redes Sociais Placeholder -->
+            <div class="flex space-x-6 mb-8">
+                <a href="#" class="hover:text-white transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg></a>
+                <a href="#" class="hover:text-white transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></a>
+                <a href="#" class="hover:text-white transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></a>
+            </div>
+
+            <!-- Links em Grade -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-8 mb-12">
+                <a href="#" class="hover:underline">Audio Descrição</a>
+                <a href="#" class="hover:underline">Central de Ajuda</a>
+                <a href="#" class="hover:underline">Cartão Pré-pago</a>
+                <a href="#" class="hover:underline">Imprensa</a>
+                <a href="#" class="hover:underline">Relações com Investidores</a>
+                <a href="#" class="hover:underline">Carreiras</a>
+                <a href="#" class="hover:underline">Termos de Uso</a>
+                <a href="#" class="hover:underline">Privacidade</a>
+                <a href="#" class="hover:underline">Avisos Legais</a>
+                <a href="#" class="hover:underline">Preferências de Cookies</a>
+                <a href="#" class="hover:underline">Informações Corporativas</a>
+                <a href="#" class="hover:underline">Entre em Contato</a>
+            </div>
+
+            <!-- Botão de Serviço Fictício -->
+            <button class="border border-[#808080] px-2 py-1 mb-8 hover:text-white hover:border-white transition-colors">Código de Serviço</button>
+
+            <!-- Créditos e TMDb -->
+            <div class="space-y-4 text-[11px]">
                 <p>Este produto usa a API e os dados do TMDb (The Movie Database), mas não é endossado ou certificado pelo TMDb.</p>
+                <p>© 1997-2024 Sessão Play, Inc.</p>
+                <div class="pt-4 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <p class="font-semibold text-gray-200">Projeto de portfólio desenvolvido para fins de estudo.</p>
+                    <p class="text-white text-xs">Criado por <span class="font-bold text-[#E50914]">Renato Paiva DEV</span> 🚀</p>
+                </div>
             </div>
-            
-            <hr class="border-gray-700">
-
-            <div class="p-2">
-                <p class="font-semibold text-gray-200">
-                    Este é um projeto fictício de estudo para portfólio, sem fins lucrativos.
-                </p>
-                <p>Todas as informações e conteúdos são meramente ilustrativos.</p>
-            </div>
-
-            <p class="text-white font-semibold">
-                Criado com carinho por Renato Paiva DEV 🚀💻
-            </p>
         </div>
     </footer>
     
     <script src="script.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </body>
 </html>

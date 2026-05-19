@@ -1,4 +1,4 @@
-📺 Netflix Clone (TMDb)
+📺 Sessão Play (TMDb)
 
 
 
@@ -7,7 +7,7 @@
 
 
 
-O Netflix Clone (TMDb) é uma réplica moderna da interface de usuário (UI) da Netflix, desenvolvida com foco em design responsivo e interatividade. O projeto utiliza a API pública do The Movie Database (TMDb) para buscar e exibir dados reais de filmes e séries, preenchendo o Hero Banner e as fileiras de carrosséis.
+Sessão Play (TMDb) é uma réplica moderna da interface de usuário (UI) da Netflix, desenvolvida com foco em design responsivo e interatividade. O projeto utiliza a API pública do The Movie Database (TMDb) para buscar e exibir dados reais de filmes e séries, preenchendo o Hero Banner e as fileiras de carrosséis.
 
 O objetivo principal foi praticar a integração com uma API externa (Fetch API), a manipulação do DOM em JavaScript puro e a gestão de estado local (como a "Minha Lista") utilizando localStorage. O design é totalmente baseado no framework Tailwind CSS, garantindo uma experiência de visualização fluida em qualquer dispositivo.
 
@@ -109,7 +109,7 @@ A aplicação será carregada, e os carrosséis devem começar a exibir os pôst
 
 
 
-O projeto Netflix Clone (TMDb) foi desenvolvido por:
+O projeto Sessão Play (TMDb) foi desenvolvido por:
 
 
 
